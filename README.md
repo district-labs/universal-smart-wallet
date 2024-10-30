@@ -5,6 +5,10 @@ Inheriting [MetaMask Delegation Framework](https://github.com/MetaMask/delegatio
 
 Designed to work with the [Universal SDK](https://github.com/district-labs/universal-sdk) stack.
 
+> [!WARNING]  
+> The Universal Wallet is still in development and should not be used in production. It is not audited and may contain bugs.
+> We're also using an unaudited version of the MetaMask Delegation Framework.
+
 ## Usage
 
 This is a list of the most frequently needed commands.
