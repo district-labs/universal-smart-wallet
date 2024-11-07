@@ -2,10 +2,7 @@
   "name": "universal-wallet-sol",
   "description": "",
   "version": "1.0.0",
-  "author": {
-    "name": "district-labs",
-    "url": "https://github.com/district-labs"
-  },
+  "author": "District Labs, Inc <districtlabs.com>",
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.1"
   },

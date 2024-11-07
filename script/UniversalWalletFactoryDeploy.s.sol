@@ -7,14 +7,12 @@ import { UniversalWalletFactory } from "src/UniversalWalletFactory.sol";
 import { IEntryPoint } from "@account-abstraction/interfaces/IEntryPoint.sol";
 import { DelegationManager } from "delegation-framework/src/DelegationManager.sol";
 
-contract ERC20PaymentAffiliateEnforcerDeploy is Script {
-    DelegationManager private delegationManager = DelegationManager(vm.envAddress("DELEGATION_MANAGER"));
+contract UniversalWalletFactoryDeploy is Script {
     uint256 private deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-    IEntryPoint private entryPoint = IEntryPoint(0x0000000071727De22E5E9d8BAf0edAc6f37da032);
+    IEntryPoint private entryPoint = IEntryPoint(vm.envAddress("ENTRYPOINT"));
+    DelegationManager private delegationManager = DelegationManager(vm.envAddress("DELEGATION_MANAGER"));
 
-    UniversalWallet universalWalletImplementation;
-
-    function run() public returns (UniversalWalletFactory universalWalletFactory) {
+    function run() public returns (UniversalWallet universalWalletImplementation, UniversalWalletFactory universalWalletFactory) {
         vm.startBroadcast(deployerPrivateKey);
         universalWalletImplementation = new UniversalWallet(delegationManager, entryPoint);
         universalWalletFactory = new UniversalWalletFactory(address(universalWalletImplementation));
