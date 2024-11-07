@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT AND Apache-2.0
 pragma solidity 0.8.23;
 
-import { console2 } from "forge-std/console2.sol";
 // Library Imports
 import { IEntryPoint } from "@account-abstraction/interfaces/IEntryPoint.sol";
 import { DeleGatorCore } from "delegation-framework/src/DeleGatorCore.sol";
@@ -107,6 +106,7 @@ contract UniversalWallet is MultiOwnable, DeleGatorCore, IERC173 {
             address account;
             assembly ("memory-safe") {
                 account := mload(add(ownerBytes, 32))
+
             }
 
             isValidSig = SignatureCheckerLib.isValidSignatureNow(account, _hash, sigWrapper.signatureData);

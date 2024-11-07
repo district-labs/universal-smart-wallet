@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT AND Apache-2.0
 pragma solidity 0.8.23;
 
+import { console2 } from "forge-std/console2.sol";
 import { Test } from "forge-std/Test.sol";
 import { Vm } from "forge-std/Vm.sol";
 import { EntryPoint } from "@account-abstraction/core/EntryPoint.sol";
@@ -136,8 +137,8 @@ abstract contract BaseTest is Test {
         view
         returns (Delegation memory delegation_)
     {
-        bytes32 delegationHash_ = EncoderLib._getDelegationHash(_delegation);
         bytes32 domainHash_ = delegationManager.getDomainHash();
+        bytes32 delegationHash_ = EncoderLib._getDelegationHash(_delegation);
         bytes32 typedDataHash_ = MessageHashUtils.toTypedDataHash(domainHash_, delegationHash_);
         delegation_ = Delegation({
             delegate: _delegation.delegate,
