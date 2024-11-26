@@ -3,7 +3,7 @@ pragma solidity >=0.8.23 <0.9.0;
 
 import { console2 } from "forge-std/console2.sol";
 import { Script } from "forge-std/Script.sol";
-import { IEntryPoint } from "@account-abstraction/interfaces/IEntryPoint.sol";
+import { SafeSingletonDeployer } from "safe-singleton-deployer-sol/SafeSingletonDeployer.sol";
 import { IDelegationManager } from "delegation-framework/src/interfaces/IDelegationManager.sol";
 import { AllowedCalldataEnforcer } from "delegation-framework/src/enforcers/AllowedCalldataEnforcer.sol";
 import { AllowedMethodsEnforcer } from "delegation-framework/src/enforcers/AllowedMethodsEnforcer.sol";
@@ -20,7 +20,8 @@ import { IdEnforcer } from "delegation-framework/src/enforcers/IdEnforcer.sol";
 import { LimitedCallsEnforcer } from "delegation-framework/src/enforcers/LimitedCallsEnforcer.sol";
 import { NativeBalanceGteEnforcer } from "delegation-framework/src/enforcers/NativeBalanceGteEnforcer.sol";
 import { NativeTokenPaymentEnforcer } from "delegation-framework/src/enforcers/NativeTokenPaymentEnforcer.sol";
-import { NativeTokenTransferAmountEnforcer } from "delegation-framework/src/enforcers/NativeTokenTransferAmountEnforcer.sol";
+import { NativeTokenTransferAmountEnforcer } from
+    "delegation-framework/src/enforcers/NativeTokenTransferAmountEnforcer.sol";
 import { NonceEnforcer } from "delegation-framework/src/enforcers/NonceEnforcer.sol";
 import { OwnershipTransferEnforcer } from "delegation-framework/src/enforcers/OwnershipTransferEnforcer.sol";
 import { RedeemerEnforcer } from "delegation-framework/src/enforcers/RedeemerEnforcer.sol";
@@ -40,71 +41,94 @@ contract EnforcersDeploy is Script {
 
     function run() public returns (ERC20TransferAmountEnforcer erc20TransferAmountEnforcer) {
         vm.startBroadcast(deployerPrivateKey);
-         address deployedAddress;
+        address deployedAddress;
 
         // Caveat Enforcers (in alphabetical order)
-        deployedAddress = address(new AllowedCalldataEnforcer{ salt: salt }());
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(AllowedCalldataEnforcer).creationCode, salt: salt });
         console2.log("AllowedCalldataEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new AllowedMethodsEnforcer{ salt: salt }());
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(AllowedMethodsEnforcer).creationCode, salt: salt });
         console2.log("AllowedMethodsEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new AllowedTargetsEnforcer{ salt: salt }());
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(AllowedTargetsEnforcer).creationCode, salt: salt });
         console2.log("AllowedTargetsEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new ArgsEqualityCheckEnforcer{ salt: salt }());
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(ArgsEqualityCheckEnforcer).creationCode, salt: salt });
         console2.log("ArgsEqualityCheckEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new BlockNumberEnforcer{ salt: salt }());
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(BlockNumberEnforcer).creationCode, salt: salt });
         console2.log("BlockNumberEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new DeployedEnforcer{ salt: salt }());
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(DeployedEnforcer).creationCode, salt: salt });
         console2.log("DeployedEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new ERC20BalanceGteEnforcer{ salt: salt }());
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(ERC20BalanceGteEnforcer).creationCode, salt: salt });
         console2.log("ERC20BalanceGteEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new ERC20TransferAmountEnforcer{ salt: salt }());
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(ERC20TransferAmountEnforcer).creationCode, salt: salt });
         console2.log("ERC20TransferAmountEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new ERC721BalanceGteEnforcer{ salt: salt }());
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(ERC721BalanceGteEnforcer).creationCode, salt: salt });
         console2.log("ERC721BalanceGteEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new ERC721TransferEnforcer{ salt: salt }());
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(ERC721TransferEnforcer).creationCode, salt: salt });
         console2.log("ERC721TransferEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new ERC1155BalanceGteEnforcer{ salt: salt }());
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(ERC1155BalanceGteEnforcer).creationCode, salt: salt });
         console2.log("ERC1155BalanceGteEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new IdEnforcer{ salt: salt }());
+        deployedAddress = SafeSingletonDeployer.deploy({ creationCode: type(IdEnforcer).creationCode, salt: salt });
         console2.log("IdEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new LimitedCallsEnforcer{ salt: salt }());
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(LimitedCallsEnforcer).creationCode, salt: salt });
         console2.log("LimitedCallsEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new NativeBalanceGteEnforcer{ salt: salt }());
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(NativeBalanceGteEnforcer).creationCode, salt: salt });
         console2.log("NativeBalanceGteEnforcer: %s", deployedAddress);
 
-        deployedAddress =
-            address(new NativeTokenPaymentEnforcer{ salt: salt }(IDelegationManager(delegationManager), deployedAddress));
+        deployedAddress = SafeSingletonDeployer.deploy({
+            creationCode: type(NativeTokenPaymentEnforcer).creationCode,
+            args: abi.encode(IDelegationManager(delegationManager), deployedAddress),
+            salt: salt
+        });
         console2.log("NativeTokenPaymentEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new NativeTokenTransferAmountEnforcer{ salt: salt }());
+        deployedAddress = SafeSingletonDeployer.deploy({
+            creationCode: type(NativeTokenTransferAmountEnforcer).creationCode,
+            salt: salt
+        });
         console2.log("NativeTokenTransferAmountEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new NonceEnforcer{ salt: salt }());
+        deployedAddress = SafeSingletonDeployer.deploy({ creationCode: type(NonceEnforcer).creationCode, salt: salt });
         console2.log("NonceEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new OwnershipTransferEnforcer{ salt: salt }());
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(OwnershipTransferEnforcer).creationCode, salt: salt });
         console2.log("OwnershipTransferEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new RedeemerEnforcer{ salt: salt }());
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(RedeemerEnforcer).creationCode, salt: salt });
         console2.log("RedeemerEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new TimestampEnforcer{ salt: salt }());
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(TimestampEnforcer).creationCode, salt: salt });
         console2.log("TimestampEnforcer: %s", deployedAddress);
 
-        deployedAddress = address(new ValueLteEnforcer{ salt: salt }());
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(ValueLteEnforcer).creationCode, salt: salt });
         console2.log("ValueLteEnforcer: %s", deployedAddress);
         vm.stopBroadcast();
     }
