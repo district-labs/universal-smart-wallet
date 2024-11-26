@@ -3,7 +3,6 @@ pragma solidity >=0.8.23 <0.9.0;
 
 import { console2 } from "forge-std/console2.sol";
 import { Script } from "forge-std/Script.sol";
-import { UniversalWallet } from "src/UniversalWallet.sol";
 import { SafeSingletonDeployer } from "safe-singleton-deployer-sol/SafeSingletonDeployer.sol";
 import { IDelegationManager } from "delegation-framework/src/interfaces/IDelegationManager.sol";
 import { AllowedCalldataEnforcer } from "delegation-framework/src/enforcers/AllowedCalldataEnforcer.sol";
