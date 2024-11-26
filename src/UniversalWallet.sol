@@ -106,7 +106,6 @@ contract UniversalWallet is MultiOwnable, DeleGatorCore, IERC173 {
             address account;
             assembly ("memory-safe") {
                 account := mload(add(ownerBytes, 32))
-
             }
 
             isValidSig = SignatureCheckerLib.isValidSignatureNow(account, _hash, sigWrapper.signatureData);
