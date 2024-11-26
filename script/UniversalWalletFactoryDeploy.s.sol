@@ -30,7 +30,7 @@ contract UniversalWalletFactoryDeploy is Script {
             payable(
                 SafeSingletonDeployer.deploy({
                     creationCode: type(UniversalWallet).creationCode,
-                    args: abi.encodePacked(delegationManager, entryPoint),
+                    args: abi.encode(delegationManager, entryPoint),
                     salt: salt
                 })
             )
@@ -38,7 +38,7 @@ contract UniversalWalletFactoryDeploy is Script {
         universalWalletFactory = UniversalWalletFactory(
             SafeSingletonDeployer.deploy({
                 creationCode: type(UniversalWalletFactory).creationCode,
-                args: abi.encodePacked(address(universalWalletImplementation)),
+                args: abi.encode(address(universalWalletImplementation)),
                 salt: salt
             })
         );
