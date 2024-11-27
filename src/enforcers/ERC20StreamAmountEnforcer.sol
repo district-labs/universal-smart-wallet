@@ -74,4 +74,20 @@ contract ERC20StreamAmountEnforcer is CaveatEnforcer {
         spent_ = spentMap[msg.sender][_delegationHash] += uint256(bytes32(callData_[36:68]));
         require(spent_ <= allowedAmount, "ERC20StreamAmountEnforcer:allowance-exceeded");
     }
+
+    /**
+     * @notice Hook that is called before the execution of the transaction.
+     * @param _terms The terms of the token stream.
+     * @param _executionCallData The transaction the delegate might try to perform.
+     * @param _delegationHash The hash of the delegation being operated on.
+     */
+    function beforeHook(
+        bytes calldata _terms,
+        bytes calldata _executionCallData,
+        bytes32 _delegationHash
+    )
+        external
+    {
+        _validateAndIncrease(_terms, _executionCallData, _delegationHash);
+    }
 }

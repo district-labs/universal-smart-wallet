@@ -23,11 +23,12 @@ contract ERC20StreamAmountEnforcer_Test is BaseTest {
     }
 
     function test_getTermsInfo() external {
+        // Test the getTermsInfo function with human-readable timestamps
         bytes memory terms = abi.encodePacked(
             address(erc20),
             uint256(100e18),
-            uint128(1733011200),
-            uint128(1734134400)
+            uint128(1733011200), // 2024-12-01T00:00:00Z
+            uint128(1734134400)  // 2024-12-14T00:00:00Z
         );
 
         (address allowedContract, uint256 maxTokens, uint128 startEpoch, uint128 endEpoch) = streamAmountEnforcer.getTermsInfo(terms);
@@ -39,11 +40,12 @@ contract ERC20StreamAmountEnforcer_Test is BaseTest {
     }
 
     function test_validateAndIncrease() external {
+        // Test the _validateAndIncrease function with human-readable timestamps
         bytes memory terms = abi.encodePacked(
             address(erc20),
             uint256(100e18),
-            uint128(1733011200),
-            uint128(1734134400)
+            uint128(1733011200), // 2024-12-01T00:00:00Z
+            uint128(1734134400)  // 2024-12-14T00:00:00Z
         );
 
         bytes memory callData = abi.encodeWithSelector(
@@ -69,11 +71,12 @@ contract ERC20StreamAmountEnforcer_Test is BaseTest {
     }
 
     function test_validateAndIncrease_streamNotStarted() external {
+        // Test the _validateAndIncrease function when the stream has not started
         bytes memory terms = abi.encodePacked(
             address(erc20),
             uint256(100e18),
-            uint128(1733011200),
-            uint128(1734134400)
+            uint128(1733011200), // 2024-12-01T00:00:00Z
+            uint128(1734134400)  // 2024-12-14T00:00:00Z
         );
 
         bytes memory callData = abi.encodeWithSelector(
@@ -97,11 +100,12 @@ contract ERC20StreamAmountEnforcer_Test is BaseTest {
     }
 
     function test_validateAndIncrease_streamEnded() external {
+        // Test the _validateAndIncrease function when the stream has ended
         bytes memory terms = abi.encodePacked(
             address(erc20),
             uint256(100e18),
-            uint128(1733011200),
-            uint128(1734134400)
+            uint128(1733011200), // 2024-12-01T00:00:00Z
+            uint128(1734134400)  // 2024-12-14T00:00:00Z
         );
 
         bytes memory callData = abi.encodeWithSelector(
@@ -125,11 +129,12 @@ contract ERC20StreamAmountEnforcer_Test is BaseTest {
     }
 
     function test_validateAndIncrease_allowanceExceeded() external {
+        // Test the _validateAndIncrease function when the allowance is exceeded
         bytes memory terms = abi.encodePacked(
             address(erc20),
             uint256(100e18),
-            uint128(1733011200),
-            uint128(1734134400)
+            uint128(1733011200), // 2024-12-01T00:00:00Z
+            uint128(1734134400)  // 2024-12-14T00:00:00Z
         );
 
         bytes memory callData = abi.encodeWithSelector(
