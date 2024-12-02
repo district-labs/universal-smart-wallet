@@ -7,3 +7,7 @@
 [submodule "lib/safe-singleton-deployer-sol"]
 	path = lib/safe-singleton-deployer-sol
 	url = https://github.com/wilsoncusack/safe-singleton-deployer-sol
+[submodule "lib/delegation-framework"]
+	path = lib/delegation-framework
+	url = https://github.com/metamask/delegation-framework
+	branch = v1.2.0-audited
