@@ -34,7 +34,7 @@ contract EnforcersDeploy is Script {
     IDelegationManager delegationManager;
 
     function setUp() public {
-        salt = bytes32(abi.encodePacked(vm.envString("SALT")));
+        salt = salt = vm.envBytes32("SALT");
         deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         delegationManager = IDelegationManager(vm.envAddress("DELEGATION_MANAGER"));
     }

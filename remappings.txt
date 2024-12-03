@@ -4,3 +4,5 @@ delegation-framework/=lib/delegation-framework/
 solady/=lib/solady/src/
 webauthn-sol/=lib/webauthn-sol/src/
 safe-singleton-deployer-sol/=lib/safe-singleton-deployer-sol/src/
+openzeppelin-contracts/=lib/openzeppelin-contracts/
+@openzeppelin/=lib/openzeppelin-contracts/

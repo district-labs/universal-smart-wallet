@@ -10,7 +10,7 @@ Designed to work with the [Universal SDK](https://github.com/district-labs/unive
 > We're also using an unaudited version of the MetaMask Delegation Framework.
 
 ## Deployments
-The Universal Wallet is deployed on Base Sepolia.
+The Universal Wallet is deployed on Base Sepolia using the following salt: 0x6dfc21ac0c8c2db036305d8bc6f887630d35e156f37d5a7e2275bc05bc004846.
 
 #### Core
 - EntryPoint: 0x0000000071727De22E5E9d8BAf0edAc6f37da032
