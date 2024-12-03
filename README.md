@@ -14,15 +14,15 @@ The Universal Wallet is deployed on Base Sepolia.
 
 #### Core
 - EntryPoint: 0x0000000071727De22E5E9d8BAf0edAc6f37da032
-- DelegationManager: 0x259333aBf1b66309bc1b7B7e76f84681e6852651
+- DelegationManager: 0x259333aBf1b66309bc1b7B7e76f84681e6852651 x
 - UniversalWalletImpl: 0x349d6bd15A486692C223C67dDad8853883998a3d
 - UniversalWalletFactory: 0x59ea58813F44aE8BF9246Fe5BA7Ee77966fF22cd
     
 #### Enforcers
-- AllowedCalldataEnforcer: 0x16F74238A5A0593816ece1d6F5c7063910529866
-- AllowedMethodsEnforcer: 0xd5d342f4e0d0C3B4A60aD19a2AaCF2cC7513b491
-- AllowedTargetsEnforcer: 0xCf664Dee9013D988f08CE3C284E6d212C1BBfdFD
-- ArgsEqualityCheckEnforcer: 0x0C7fcF1140441eE967849b26833EDac1673a6987
+- AllowedCalldataEnforcer: 0x16F74238A5A0593816ece1d6F5c7063910529866 x
+- AllowedMethodsEnforcer: 0xd5d342f4e0d0C3B4A60aD19a2AaCF2cC7513b491 x
+- AllowedTargetsEnforcer: 0xCf664Dee9013D988f08CE3C284E6d212C1BBfdFD x
+- ArgsEqualityCheckEnforcer: 0x0C7fcF1140441eE967849b26833EDac1673a6987 x
 - BlockNumberEnforcer: 0x41AC4f87f1c41A9f65e2a7184a09EF35FB97e1a7
 - DeployedEnforcer: 0x8197383Fc911097189174e34437Ad53A185333CD
 - ERC20BalanceGteEnforcer: 0x970B0d6912A1FbE1A8Ca078931BDBe9b4b47C574
