@@ -15,7 +15,7 @@ contract UniversalWalletFactoryDeploy is Script {
     DelegationManager private delegationManager;
 
     function setUp() public {
-        salt = bytes32(abi.encodePacked(vm.envString("SALT")));
+        salt = vm.envBytes32("SALT");
         deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         entryPoint = IEntryPoint(vm.envAddress("ENTRYPOINT"));
         delegationManager = DelegationManager(vm.envAddress("DELEGATION_MANAGER"));

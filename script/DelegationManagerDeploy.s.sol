@@ -11,7 +11,7 @@ contract DelegationManagerDeploy is Script {
     address private delegationManagerOwner;
 
     function setUp() public {
-        salt = bytes32(abi.encodePacked(vm.envString("SALT")));
+        salt = vm.envBytes32("SALT");
         deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         delegationManagerOwner = vm.envAddress("DELEGATION_MANAGER_OWNER");
     }
