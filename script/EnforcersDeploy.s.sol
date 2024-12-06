@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.23 <0.9.0;
 
 import { console2 } from "forge-std/console2.sol";
@@ -27,6 +26,7 @@ import { OwnershipTransferEnforcer } from "delegation-framework/src/enforcers/Ow
 import { RedeemerEnforcer } from "delegation-framework/src/enforcers/RedeemerEnforcer.sol";
 import { TimestampEnforcer } from "delegation-framework/src/enforcers/TimestampEnforcer.sol";
 import { ValueLteEnforcer } from "delegation-framework/src/enforcers/ValueLteEnforcer.sol";
+import { ERC20StreamAmountEnforcer } from "src/enforcers/ERC20StreamAmountEnforcer.sol";
 
 contract EnforcersDeploy is Script {
     bytes32 salt;
@@ -130,6 +130,10 @@ contract EnforcersDeploy is Script {
         deployedAddress =
             SafeSingletonDeployer.deploy({ creationCode: type(ValueLteEnforcer).creationCode, salt: salt });
         console2.log("ValueLteEnforcer: %s", deployedAddress);
+
+        deployedAddress = address(new ERC20StreamAmountEnforcer{ salt: salt }());
+        console2.log("ERC20StreamAmountEnforcer: %s", deployedAddress);
+
         vm.stopBroadcast();
     }
 }
