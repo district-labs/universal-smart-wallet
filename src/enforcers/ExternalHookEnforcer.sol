@@ -16,12 +16,12 @@ contract ExternalHookEnforcer is CaveatEnforcer {
 
     /**
      * @notice This function enforces that an external hook is executed after the execution has finished.
-     * @param _terms packed bytes where: the first 20 bytes are the address of the target contract, the next bytes
+     * @param _args packed bytes where: the first 20 bytes are the address of the target contract, the next bytes
      * are the data that will be used in the call.
      */
     function afterHook(
-        bytes calldata _terms,
         bytes calldata,
+        bytes calldata _args,
         ModeCode,
         bytes calldata,
         bytes32,
@@ -31,7 +31,7 @@ contract ExternalHookEnforcer is CaveatEnforcer {
         public
         override
     {
-        (address target, bytes calldata data) = getTermsInfo(_terms);
+        (address target, bytes calldata data) = getArgsInfo(_args);
 
         (bool success, bytes memory revertData) = target.call(data);
         if (!success) {
@@ -40,14 +40,14 @@ contract ExternalHookEnforcer is CaveatEnforcer {
     }
 
     /**
-     * @notice Decodes the terms used in this CaveatEnforcer.
-     * @param _terms encoded data that is used during the execution hooks.
+     * @notice Decodes the args used in this CaveatEnforcer.
+     * @param _args encoded data that is used during the execution hooks.
      * @return target The address of the contract that will be called.
      * @return data The data that will be used in the call.
      */
-    function getTermsInfo(bytes calldata _terms) public pure returns (address target, bytes calldata data) {
-        require(_terms.length > 20, "ExternalHookEnforcer:invalid-terms-length");
-        target = address(bytes20(_terms[:20]));
-        data = _terms[20:];
+    function getArgsInfo(bytes calldata _args) public pure returns (address target, bytes calldata data) {
+        require(_args.length > 20, "ExternalHookEnforcer:invalid-_args-length");
+        target = address(bytes20(_args[:20]));
+        data = _args[20:];
     }
 }
