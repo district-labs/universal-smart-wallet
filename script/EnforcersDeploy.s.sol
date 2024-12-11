@@ -27,6 +27,8 @@ import { OwnershipTransferEnforcer } from "delegation-framework/src/enforcers/Ow
 import { RedeemerEnforcer } from "delegation-framework/src/enforcers/RedeemerEnforcer.sol";
 import { TimestampEnforcer } from "delegation-framework/src/enforcers/TimestampEnforcer.sol";
 import { ValueLteEnforcer } from "delegation-framework/src/enforcers/ValueLteEnforcer.sol";
+import {ERC20BalanceGteAfterAllEnforcer} from "src/enforcers/ERC20BalanceGteAfterAllEnforcer.sol"; 
+import {ExternalHookEnforcer} from "src/enforcers/ExternalHookEnforcer.sol"; 
 
 contract EnforcersDeploy is Script {
     bytes32 salt;
@@ -43,7 +45,7 @@ contract EnforcersDeploy is Script {
         vm.startBroadcast(deployerPrivateKey);
         address deployedAddress;
 
-        // Caveat Enforcers (in alphabetical order)
+        Caveat Enforcers (in alphabetical order)
         deployedAddress =
             SafeSingletonDeployer.deploy({ creationCode: type(AllowedCalldataEnforcer).creationCode, salt: salt });
         console2.log("AllowedCalldataEnforcer: %s", deployedAddress);
@@ -130,6 +132,14 @@ contract EnforcersDeploy is Script {
         deployedAddress =
             SafeSingletonDeployer.deploy({ creationCode: type(ValueLteEnforcer).creationCode, salt: salt });
         console2.log("ValueLteEnforcer: %s", deployedAddress);
+
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(ERC20BalanceGteAfterAllEnforcer).creationCode, salt: salt });
+        console2.log("ERC20BalanceGteAfterAllEnforcer: %s", deployedAddress);
+
+        deployedAddress =
+            SafeSingletonDeployer.deploy({ creationCode: type(ExternalHookEnforcer).creationCode, salt: salt });
+        console2.log("ExternalHookEnforcer: %s", deployedAddress);
         vm.stopBroadcast();
     }
 }
