@@ -11,6 +11,7 @@ import { ModeCode } from "delegation-framework/src/utils/Types.sol";
 contract ExternalHookEnforcer is CaveatEnforcer {
     ////////////////////////////// Errors //////////////////////////////
     error ExternalHookExecutionFailed(bytes revertData);
+    error InvalidArgsLength(uint256 length);
 
     ////////////////////////////// Public Methods //////////////////////////////
 
@@ -46,7 +47,9 @@ contract ExternalHookEnforcer is CaveatEnforcer {
      * @return data The data that will be used in the call.
      */
     function getArgsInfo(bytes calldata _args) public pure returns (address target, bytes calldata data) {
-        require(_args.length > 20, "ExternalHookEnforcer:invalid-_args-length");
+        if (_args.length < 20) {
+            revert InvalidArgsLength(_args.length);
+        }
         target = address(bytes20(_args[:20]));
         data = _args[20:];
     }

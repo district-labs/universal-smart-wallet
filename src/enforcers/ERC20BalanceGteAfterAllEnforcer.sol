@@ -18,6 +18,12 @@ contract ERC20BalanceGteAfterAllEnforcer is CaveatEnforcer {
     mapping(bytes32 hashKey => uint256 balance) public balanceCache;
     mapping(bytes32 hashKey => bool lock) public isLocked;
 
+    ////////////////////////////// Errors //////////////////////////////
+
+    error EnforcerIsLocked();
+    error BalanceNotGreaterOrEqualThan(uint256 balance, uint256 expected);
+    error InvalidTermsLength(uint256 length, uint256 expected);
+
     ////////////////////////////// External Methods //////////////////////////////
 
     /**
@@ -32,6 +38,33 @@ contract ERC20BalanceGteAfterAllEnforcer is CaveatEnforcer {
     }
 
     ////////////////////////////// Public Methods //////////////////////////////
+
+    /**
+     * @notice This function caches the delegators ERC20 balance before the delegation is executed.
+     * @param _terms 52 packed bytes where: the first 20 bytes are the address of the token, the next 32 bytes
+     * are the amount the balance should be greater than
+     */
+    function beforeAllHook(
+        bytes calldata _terms,
+        bytes calldata,
+        ModeCode,
+        bytes calldata,
+        bytes32 _delegationHash,
+        address _delegator,
+        address
+    )
+        public
+        override
+    {
+        (address token_,) = getTermsInfo(_terms);
+        bytes32 hashKey_ = _getHashKey(msg.sender, token_, _delegationHash);
+        if (isLocked[hashKey_]) {
+            revert EnforcerIsLocked();
+        }
+        isLocked[hashKey_] = true;
+        uint256 balance_ = IERC20(token_).balanceOf(_delegator);
+        balanceCache[hashKey_] = balance_;
+    }
 
     /**
      * @notice This function enforces that the delegators ERC20 balance has increased by at least the amount provided.
@@ -54,7 +87,10 @@ contract ERC20BalanceGteAfterAllEnforcer is CaveatEnforcer {
         bytes32 hashKey_ = _getHashKey(msg.sender, token_, _delegationHash);
         delete isLocked[hashKey_];
         uint256 balance_ = IERC20(token_).balanceOf(_delegator);
-        require(balance_ >= balanceCache[hashKey_] + amount_, "ERC20BalanceGteAfterAllEnforcer:balance-not-gt");
+
+        if (balance_ < balanceCache[hashKey_] + amount_) {
+            revert BalanceNotGreaterOrEqualThan(balance_, balanceCache[hashKey_] + amount_);
+        }
     }
 
     /**
@@ -64,7 +100,9 @@ contract ERC20BalanceGteAfterAllEnforcer is CaveatEnforcer {
      * @return amount_ The amount the balance should be greater than.
      */
     function getTermsInfo(bytes calldata _terms) public pure returns (address token_, uint256 amount_) {
-        require(_terms.length == 52, "ERC20BalanceGteAfterAllEnforcer:invalid-terms-length");
+        if (_terms.length != 52) {
+            revert InvalidTermsLength(_terms.length, 52);
+        }
         token_ = address(bytes20(_terms[:20]));
         amount_ = uint256(bytes32(_terms[20:]));
     }
