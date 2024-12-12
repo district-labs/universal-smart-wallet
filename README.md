@@ -17,6 +17,9 @@ The Universal Wallet is deployed on Base Sepolia using the following salt: 0x6df
 - DelegationManager: 0x26e1920510E4d8693524e161380Bbf01318E33c9
 - UniversalWalletImpl: 0xd3F1B71597458bcE2A1b56D0987dd31Ff8FF2C36
 - UniversalWalletFactory: 0x6c6c2C2afA04E2c8f626223ff900Cce95554E9D8
+
+#### Periphery
+- Multicall: 0x7063f9cB3623B872f75B54E5bFAECf1FEe1699fc
     
 #### Enforcers
 - AllowedCalldataEnforcer: 0xe11D4d4e129516E829a17a5aC98cBD243d8D6D97
@@ -40,6 +43,8 @@ The Universal Wallet is deployed on Base Sepolia using the following salt: 0x6df
 - RedeemerEnforcer: 0xbD848E5861825754c809F5b813A72B50691A86A6
 - TimestampEnforcer: 0x675b4844E388e329354185cAcBC30E3F93456559
 - ValueLteEnforcer: 0x1f7EE6330cc76Bb26Cc490166CcAbf451234A578
+- ERC20BalanceGteAfterAllEnforcer: 0xCb9950cC1D78876BCf76bF0accAF3b092245A8B4
+- ExternalHookEnforcer: 0xeE186Ed1b94700B8a92E3FEf4200dED7668E969A
 
 ## Usage
 
