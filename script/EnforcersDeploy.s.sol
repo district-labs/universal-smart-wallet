@@ -45,7 +45,7 @@ contract EnforcersDeploy is Script {
         vm.startBroadcast(deployerPrivateKey);
         address deployedAddress;
 
-        Caveat Enforcers (in alphabetical order)
+        // Caveat Enforcers (in alphabetical order)
         deployedAddress =
             SafeSingletonDeployer.deploy({ creationCode: type(AllowedCalldataEnforcer).creationCode, salt: salt });
         console2.log("AllowedCalldataEnforcer: %s", deployedAddress);
