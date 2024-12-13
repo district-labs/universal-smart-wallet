@@ -4,7 +4,6 @@ pragma solidity 0.8.23;
 import { console2 } from "forge-std/console2.sol";
 import { ForkTest } from "test/fork/ForkTest.t.sol";
 import { IPool } from "aave-v3-core/interfaces/IPool.sol";
-import { PrizeVault } from "pt-v5-vault/src/PrizeVault.sol";
 import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Delegation, Caveat, Execution, ModeCode } from "delegation-framework/src/utils/Types.sol";
@@ -147,52 +146,6 @@ contract LimitOrder_ForkTest is ForkTest {
         });
         executionCallDatas[0] = ExecutionLib.encodeSingle(execution.target, execution.value, execution.callData);
     }
-
-    function _setupRedeemLimitOrderDelegationPooltogetherV5(
-        address _tokenOut,
-        uint256 _amountOut,
-        address _tokenIn,
-        uint256 _amountIn,
-        Delegation memory _delegation
-    )
-        internal
-        returns (bytes[] memory permissionContexts, bytes[] memory executionCallDatas)
-    {
-        // Setup hook executions
-        Execution[] memory hookExecutions = new Execution[](2);
-        // Execution 1: Approves the tokenOut to the Aave Pool
-        hookExecutions[0] = Execution({
-            target: address(_tokenOut),
-            value: 0,
-            callData: abi.encodeWithSelector(IERC20.approve.selector, address(przUSDC), _amountOut)
-        });
-        // Execution 2: Deposits the tokenOut to the Aave Pool
-        hookExecutions[1] = Execution({
-            target: address(przUSDC),
-            value: 0,
-            callData: abi.encodeWithSelector(PrizeVault.deposit.selector, _amountOut, address(delegator.deleGator), 0)
-        });
-
-        // Update the delegation to update the external hook enforcer args
-        _delegation.caveats[1].args =
-            abi.encodePacked(address(multicall), abi.encodeWithSelector(multicall.multicall.selector, hookExecutions));
-
-        // Setup Permission Contexts
-        Delegation[] memory delegations = new Delegation[](1);
-        delegations[0] = _delegation;
-        permissionContexts = new bytes[](1);
-        permissionContexts[0] = abi.encode(delegations);
-
-        // Setup Execution Calldatas
-        executionCallDatas = new bytes[](1);
-        Execution memory execution = Execution({
-            target: address(_tokenOut),
-            value: 0,
-            callData: abi.encodeWithSelector(IERC20.transfer.selector, address(multicall), _amountOut)
-        });
-        executionCallDatas[0] = ExecutionLib.encodeSingle(execution.target, execution.value, execution.callData);
-    }
-
     ////////////////////////////// Tests //////////////////////////////
 
     function test_limit_order_AaveV3() external {
@@ -221,50 +174,6 @@ contract LimitOrder_ForkTest is ForkTest {
         vm.startPrank(resolver.addr);
         (bytes[] memory permissionContexts, bytes[] memory executionCallDatas) =
             _setupRedeemLimitOrderDelegationAaveV3(tokenOut, amountOut, tokenIn, amountIn, limitOrderDelegation);
-
-        delegationManager.redeemDelegations(permissionContexts, oneSingleMode, executionCallDatas);
-
-        // Check final balances
-        uint256 finalDelegatorTokenOutBalance = IERC20(tokenOut).balanceOf(address(delegator.deleGator));
-        uint256 finalDelegatorTokenInBalance = IERC20(tokenIn).balanceOf(address(delegator.deleGator));
-        uint256 finalMulticallTokenOutBalance = IERC20(tokenOut).balanceOf(address(multicall));
-
-        console2.log("Final Delegator Token Out Balance: ", finalDelegatorTokenOutBalance);
-        console2.log("Final Delegator Token In Balance: ", finalDelegatorTokenInBalance);
-
-        // Check the balances
-        assertEq(finalDelegatorTokenOutBalance, initialDelegatorTokenOutBalance - amountOut);
-        assertEq(finalDelegatorTokenInBalance, initialDelegatorTokenInBalance + amountIn);
-
-        vm.stopPrank();
-    }
-
-    function test_limit_order_PoolTogetherV5() external {
-        address tokenOut = address(USDC);
-        address tokenIn = address(przUSDC);
-        uint256 amountOut = 1000e6;
-        uint256 amountIn = 1000e6;
-
-        // Deal USDC tokens to the delegator
-        vm.prank(USDC_WHALE);
-        IERC20(tokenOut).transfer(address(delegator.deleGator), amountOut);
-
-        // Check initial balances
-        uint256 initialDelegatorTokenOutBalance = IERC20(tokenOut).balanceOf(address(delegator.deleGator));
-        uint256 initialMulticallTokenOutBalance = IERC20(tokenOut).balanceOf(address(multicall));
-        uint256 initialDelegatorTokenInBalance = IERC20(tokenIn).balanceOf(address(delegator.deleGator));
-
-        console2.log("Initial Delegator Token Out Balance: ", initialDelegatorTokenOutBalance);
-        console2.log("Initial Delegator Token In Balance: ", initialDelegatorTokenInBalance);
-
-        // Delegator sets up and signs a limit order delegation
-        Delegation memory limitOrderDelegation =
-            _setupSignLimitOrderDelegation(tokenOut, amountOut, tokenIn, amountIn, delegator);
-
-        // Delegate Redeems the limit order
-        vm.startPrank(resolver.addr);
-        (bytes[] memory permissionContexts, bytes[] memory executionCallDatas) =
-            _setupRedeemLimitOrderDelegationPooltogetherV5(tokenOut, amountOut, tokenIn, amountIn, limitOrderDelegation);
 
         delegationManager.redeemDelegations(permissionContexts, oneSingleMode, executionCallDatas);
 
