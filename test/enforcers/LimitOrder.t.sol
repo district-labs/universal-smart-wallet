@@ -5,6 +5,7 @@ import { console2 } from "forge-std/console2.sol";
 import { BaseTest, ERC20Mintable } from "test/utils/BaseTest.t.sol";
 import { MockResolver } from "test/utils/MockResolver.sol";
 import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import { EncoderLib } from "delegation-framework/src/libraries/EncoderLib.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { WebAuthn } from "webauthn-sol/WebAuthn.sol";
 import { Delegation, Caveat, Execution, ModeCode } from "delegation-framework/src/utils/Types.sol";
@@ -107,6 +108,44 @@ contract LimitOrder_Test is BaseTest {
         delegation = signDelegation(_delegator, delegation);
     }
 
+    function _setupSignLimitOrderWithoutERC20TransferDelegation(
+        address _tokenOut,
+        uint256 _amountOut,
+        address _tokenIn,
+        uint256 _amountIn,
+        bytes32 _authority,
+        TestUser memory _delegator
+    )
+        internal
+        returns (Delegation memory delegation)
+    {
+        // Limit Order Delegation Caveats //
+        Caveat[] memory delegationCaveats = new Caveat[](2);
+
+
+        // External Hook Enforcer
+        // Let the resolver fulfill the delegation
+        delegationCaveats[0] = Caveat({ args: hex"", enforcer: address(externalHookEnforcer), terms: hex"" });
+
+        // ERC20 Balance Gte After All Enforcer
+        delegationCaveats[1] = Caveat({
+            args: hex"",
+            enforcer: address(erc20BalanceGteAfterAllEnforcer),
+            terms: abi.encodePacked(_tokenIn, _amountIn)
+        });
+
+        delegation = Delegation({
+            delegate: ANY_DELEGATE,
+            delegator: address(_delegator.deleGator),
+            authority: _authority,
+            caveats: delegationCaveats,
+            salt: 0,
+            signature: hex""
+        });
+
+        // Reassign the delegation with the signature
+        delegation = signDelegation(_delegator, delegation);
+    }
     function _setupSignErc20TransferAmountDelegation(
         address _tokenOut,
         uint256 _amountOut,
@@ -174,6 +213,40 @@ contract LimitOrder_Test is BaseTest {
         executionCallDatas[0] = ExecutionLib.encodeSingle(execution.target, execution.value, execution.callData);
     }
 
+       function _setupRedeemLimitOrderDelegationWithRedelegation(
+        address _tokenOut,
+        uint256 _amountOut,
+        address _tokenIn,
+        uint256 _amountIn,
+        Delegation memory _erc20TransferAmountDelegation,
+        Delegation memory _limitOrderDelegation
+    )
+        internal
+        returns (bytes[] memory permissionContexts, bytes[] memory executionCallDatas)
+    {
+        // Update the delegation to update the external hook enforcer args
+        _limitOrderDelegation.caveats[0].args = abi.encodePacked(
+            address(mockResolver),
+            abi.encodeWithSelector(mockResolver.transfer.selector, _tokenIn, address(delegator.deleGator), _amountIn)
+        );
+
+        // Setup Permission Contexts
+        Delegation[] memory delegations = new Delegation[](2);
+        delegations[0] = _limitOrderDelegation;
+        delegations[1] = _erc20TransferAmountDelegation;
+        permissionContexts = new bytes[](1);
+        permissionContexts[0] = abi.encode(delegations);
+
+        // Setup Execution Calldatas
+        executionCallDatas = new bytes[](1);
+        Execution memory execution = Execution({
+            target: address(_tokenOut),
+            value: 0,
+            callData: abi.encodeWithSelector(IERC20.transfer.selector, address(mockResolver), _amountOut)
+        });
+        executionCallDatas[0] = ExecutionLib.encodeSingle(execution.target, execution.value, execution.callData);
+    }
+
     ////////////////////////////// Tests //////////////////////////////
 
     function test_limit_order_simple_success() external {
@@ -213,6 +286,7 @@ contract LimitOrder_Test is BaseTest {
 
         // Check the balances
         assertEq(finalDelegatorTokenOutBalance, initialDelegatorTokenOutBalance - amountOut);
+        assertEq(finalDelegatorTokenInBalance, initialDelegatorTokenInBalance + amountIn);
 
         vm.stopPrank();
     }
@@ -228,36 +302,39 @@ contract LimitOrder_Test is BaseTest {
             _setupSignErc20TransferAmountDelegation(tokenOut, amountOut, tokenIn, amountIn, users.alice, delegator);
 
         // Mint the tokens
-        ERC20Mintable(tokenOut).mint(address(delegator.deleGator), amountOut);
+        ERC20Mintable(tokenOut).mint(address(users.alice.deleGator), amountOut);
         ERC20Mintable(tokenIn).mint(address(mockResolver), amountIn);
 
         // Check initial balances
-        uint256 initialDelegatorTokenOutBalance = IERC20(tokenOut).balanceOf(address(delegator.deleGator));
+        uint256 initialAliceTokenOutBalance = IERC20(tokenOut).balanceOf(address(users.alice.deleGator));
         uint256 initialDelegatorTokenInBalance = IERC20(tokenIn).balanceOf(address(delegator.deleGator));
 
-        console2.log("Initial Delegator Token Out Balance: ", initialDelegatorTokenOutBalance);
+        console2.log("Initial Alice Token Out Balance: ", initialAliceTokenOutBalance);
         console2.log("Initial Delegator Token In Balance: ", initialDelegatorTokenInBalance);
+
+        bytes32 authority = EncoderLib._getDelegationHash(erc20TransferDelegation);
 
         // Delegator sets up and signs a limit order delegation
         Delegation memory limitOrderDelegation =
-            _setupSignLimitOrderDelegation(tokenOut, amountOut, tokenIn, amountIn, ROOT_AUTHORITY, delegator);
+            _setupSignLimitOrderWithoutERC20TransferDelegation(tokenOut, amountOut, tokenIn, amountIn, authority, delegator);
 
         // Delegate Redeems the limit order
         vm.startPrank(resolver.addr);
         (bytes[] memory permissionContexts, bytes[] memory executionCallDatas) =
-            _setupRedeemLimitOrderDelegation(tokenOut, amountOut, tokenIn, amountIn, limitOrderDelegation);
+            _setupRedeemLimitOrderDelegationWithRedelegation(tokenOut, amountOut, tokenIn, amountIn, erc20TransferDelegation, limitOrderDelegation);
 
         delegationManager.redeemDelegations(permissionContexts, oneSingleMode, executionCallDatas);
 
         // Check final balances
-        uint256 finalDelegatorTokenOutBalance = IERC20(tokenOut).balanceOf(address(delegator.deleGator));
+        uint256 finalAliceTokenOutBalance = IERC20(tokenOut).balanceOf(address(users.alice.deleGator));
         uint256 finalDelegatorTokenInBalance = IERC20(tokenIn).balanceOf(address(delegator.deleGator));
 
-        console2.log("Final Delegator Token Out Balance: ", finalDelegatorTokenOutBalance);
+        console2.log("Final Alice Token Out Balance: ", finalAliceTokenOutBalance);
         console2.log("Final Delegator Token In Balance: ", finalDelegatorTokenInBalance);
 
         // Check the balances
-        assertEq(finalDelegatorTokenOutBalance, initialDelegatorTokenOutBalance - amountOut);
+        assertEq(finalAliceTokenOutBalance, initialAliceTokenOutBalance - amountOut);
+        assertEq(finalDelegatorTokenInBalance, initialDelegatorTokenInBalance + amountIn);
 
         vm.stopPrank();
     }
