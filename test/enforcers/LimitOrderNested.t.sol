@@ -141,8 +141,8 @@ contract LimitOrder_Test is BaseTest {
 
     struct Params {
         address _tokenOut;
-        uint256 _delegatedAmountOutOut;
-        uint256 _balanceAmountOutOut;
+        uint256 _delegatedAmountOut;
+        uint256 _balanceAmountOut;
         address _tokenIn;
         uint256 _amountIn;
         Delegation _delegation;
@@ -164,7 +164,7 @@ contract LimitOrder_Test is BaseTest {
             target: address(_params._tokenOut),
             value: 0,
             callData: abi.encodeWithSelector(
-                IERC20.transfer.selector, address(_params._delegation.delegator), _params._delegatedAmountOutOut
+                IERC20.transfer.selector, address(_params._delegation.delegator), _params._delegatedAmountOut
             )
         });
         nestedExecutionCallDatas[0] =
@@ -205,9 +205,7 @@ contract LimitOrder_Test is BaseTest {
             target: address(_params._tokenOut),
             value: 0,
             callData: abi.encodeWithSelector(
-                IERC20.transfer.selector,
-                address(mockResolver),
-                _params._delegatedAmountOutOut + _params._balanceAmountOutOut
+                IERC20.transfer.selector, address(mockResolver), _params._delegatedAmountOut + _params._balanceAmountOut
             )
         });
 
@@ -248,8 +246,8 @@ contract LimitOrder_Test is BaseTest {
 
         Params memory params = Params({
             _tokenOut: tokenOut,
-            _delegatedAmountOutOut: aliceAmountOut,
-            _balanceAmountOutOut: delegatorAmountOut,
+            _delegatedAmountOut: aliceAmountOut,
+            _balanceAmountOut: delegatorAmountOut,
             _tokenIn: tokenIn,
             _amountIn: amountIn,
             _delegation: emptyDelegation,
@@ -262,17 +260,18 @@ contract LimitOrder_Test is BaseTest {
         delegationManager.redeemDelegations(permissionContexts, oneBatchMode, executionCallDatas);
 
         // Get final balances
-        // uint256 finalAliceTokenOutBalance = IERC20(tokenOut).balanceOf(address(users.alice.deleGator));
+        uint256 finalAliceTokenOutBalance = IERC20(tokenOut).balanceOf(address(users.alice.deleGator));
         uint256 finalDelegatorTokenOutBalance = IERC20(tokenOut).balanceOf(address(delegator.deleGator));
         uint256 finalDelegatorTokenInBalance = IERC20(tokenIn).balanceOf(address(delegator.deleGator));
 
-        // console2.log("Final Alice Token Out Balance: ", finalAliceTokenOutBalance);
+        console2.log("Final Alice Token Out Balance: ", finalAliceTokenOutBalance);
         console2.log("Final Delegator Token Out Balance: ", finalDelegatorTokenOutBalance);
         console2.log("Final Delegator Token In Balance: ", finalDelegatorTokenInBalance);
 
-        // // Check the balances
-        // assertEq(finalAliceTokenOutBalance, initialAliceTokenOutBalance - amountOut);
-        // assertEq(finalDelegatorTokenInBalance, initialDelegatorTokenInBalance + amountIn);
+        // Check the balances
+        assertEq(finalAliceTokenOutBalance, initialAliceTokenOutBalance - aliceAmountOut);
+        assertEq(finalDelegatorTokenOutBalance, initialDelegatorTokenOutBalance - delegatorAmountOut);
+        assertEq(finalDelegatorTokenInBalance, initialDelegatorTokenInBalance + amountIn);
 
         vm.stopPrank();
     }
