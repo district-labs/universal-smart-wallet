@@ -5,7 +5,6 @@ import { console2 } from "forge-std/console2.sol";
 import { BaseTest, ERC20Mintable } from "test/utils/BaseTest.t.sol";
 import { MockResolver } from "test/utils/MockResolver.sol";
 import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-import { EncoderLib } from "delegation-framework/src/libraries/EncoderLib.sol";
 import { DelegationManager } from "delegation-framework/src/DelegationManager.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { WebAuthn } from "webauthn-sol/WebAuthn.sol";
@@ -15,7 +14,11 @@ import { ExecutionLib } from "@erc7579/lib/ExecutionLib.sol";
 import { TestUser } from "test/utils/Types.t.sol";
 
 import { ModeLib } from "@erc7579/lib/ModeLib.sol";
+import { ExactExecutionCallsLengthEnforcer } from "../../src/enforcers/ExactExecutionCallsLengthEnforcer.sol";
+import { BatchExecutionCallIndexEnforcer } from "../../src/enforcers/BatchExecutionCallIndexEnforcer.sol";
 import { ExternalHookEnforcer } from "../../src/enforcers/ExternalHookEnforcer.sol";
+import { RedeemDelegationEnforcer } from "../../src/enforcers/RedeemDelegationEnforcer.sol";
+import { EncoderLib } from "delegation-framework/src/libraries/EncoderLib.sol";
 import { ERC20BalanceGteAfterAllEnforcer } from "../../src/enforcers/ERC20BalanceGteAfterAllEnforcer.sol";
 import { ERC20TransferAmountEnforcer } from "delegation-framework/src/enforcers/ERC20TransferAmountEnforcer.sol";
 
@@ -32,9 +35,11 @@ contract LimitOrder_Test is BaseTest {
     ERC20TransferAmountEnforcer erc20TransferAmountEnforcer;
     ExternalHookEnforcer externalHookEnforcer;
     ERC20BalanceGteAfterAllEnforcer erc20BalanceGteAfterAllEnforcer;
+    RedeemDelegationEnforcer redeemDelegationEnforcer;
+    ExactExecutionCallsLengthEnforcer exactExecutionCallsLengthEnforcer;
+    BatchExecutionCallIndexEnforcer batchExecutionCallIndexEnforcer;
 
     // Users
-    TestUser delegator;
     TestUser resolver;
 
     // Modes
@@ -54,9 +59,11 @@ contract LimitOrder_Test is BaseTest {
         erc20TransferAmountEnforcer = new ERC20TransferAmountEnforcer();
         externalHookEnforcer = new ExternalHookEnforcer();
         erc20BalanceGteAfterAllEnforcer = new ERC20BalanceGteAfterAllEnforcer();
+        redeemDelegationEnforcer = new RedeemDelegationEnforcer(address(delegationManager));
+        exactExecutionCallsLengthEnforcer = new ExactExecutionCallsLengthEnforcer();
+        batchExecutionCallIndexEnforcer = new BatchExecutionCallIndexEnforcer();
 
         // Setup Users
-        delegator = users.user1;
         resolver = users.user2;
 
         // Setup Modes
@@ -105,15 +112,18 @@ contract LimitOrder_Test is BaseTest {
     }
 
     function _setupSignMainDelegation(
+        address _tokenOut,
+        uint256 _amountOutTotal,
         address _tokenIn,
         uint256 _amountIn,
-        TestUser memory _delegator
+        TestUser memory _delegator,
+        Delegation memory nestedDelegation
     )
         internal
         returns (Delegation memory delegation)
     {
         // Limit Order Delegation Caveats //
-        Caveat[] memory delegationCaveats = new Caveat[](2);
+        Caveat[] memory delegationCaveats = new Caveat[](5);
 
         // External Hook Enforcer
         // Let the resolver fulfill the delegation
@@ -124,6 +134,30 @@ contract LimitOrder_Test is BaseTest {
             args: hex"",
             enforcer: address(erc20BalanceGteAfterAllEnforcer),
             terms: abi.encodePacked(_tokenIn, _amountIn)
+        });
+
+        // Limit the number of calls to 2
+        delegationCaveats[2] = Caveat({
+            args: hex"",
+            enforcer: address(exactExecutionCallsLengthEnforcer),
+            terms: abi.encodePacked(uint16(2))
+        });
+
+        // Enforce the redemption of the nested delegation in the first execution call
+        delegationCaveats[3] = Caveat({
+            args: hex"",
+            enforcer: address(redeemDelegationEnforcer),
+            terms: abi.encodePacked(uint16(0), EncoderLib._getDelegationHash(nestedDelegation))
+        });
+
+        // Enforce the transfer of the delegated amount and the balance amount to the resolver in the second execution call
+        delegationCaveats[4] = Caveat({
+            args: hex"",
+            enforcer: address(batchExecutionCallIndexEnforcer),
+            terms: abi.encodePacked(uint16(1),
+            address(_tokenOut),
+            abi.encodeWithSelector(IERC20.transfer.selector, address(mockResolver), _amountOutTotal)
+            )
         });
 
         delegation = Delegation({
@@ -174,7 +208,7 @@ contract LimitOrder_Test is BaseTest {
         _params._delegation.caveats[0].args = abi.encodePacked(
             address(mockResolver),
             abi.encodeWithSelector(
-                mockResolver.transfer.selector, _params._tokenIn, address(delegator.deleGator), _params._amountIn
+                mockResolver.transfer.selector, _params._tokenIn, address(users.bob.deleGator), _params._amountIn
             )
         );
 
@@ -220,29 +254,30 @@ contract LimitOrder_Test is BaseTest {
 
         uint256 aliceAmountOut = 500e6;
         uint256 delegatorAmountOut = 250e6;
+
         uint256 amountIn = aliceAmountOut + delegatorAmountOut;
 
         // Alice delegates an ERC20 transfer to the delegator
         Delegation memory erc20TransferDelegation =
-            _setupSignErc20TransferAmountDelegation(tokenOut, aliceAmountOut, tokenIn, amountIn, users.alice, delegator);
+            _setupSignErc20TransferAmountDelegation(tokenOut, aliceAmountOut, tokenIn, amountIn, users.alice, users.bob);
 
         // Mint the tokens
         ERC20Mintable(tokenOut).mint(address(users.alice.deleGator), aliceAmountOut);
-        ERC20Mintable(tokenOut).mint(address(delegator.deleGator), delegatorAmountOut);
+        ERC20Mintable(tokenOut).mint(address(users.bob.deleGator), delegatorAmountOut);
         ERC20Mintable(tokenIn).mint(address(mockResolver), amountIn);
 
         // Check initial balances
         uint256 initialAliceTokenOutBalance = IERC20(tokenOut).balanceOf(address(users.alice.deleGator));
-        uint256 initialDelegatorTokenOutBalance = IERC20(tokenOut).balanceOf(address(delegator.deleGator));
-        uint256 initialDelegatorTokenInBalance = IERC20(tokenIn).balanceOf(address(delegator.deleGator));
+        uint256 initialBobTokenOutBalance = IERC20(tokenOut).balanceOf(address(users.bob.deleGator));
+        uint256 initialBobTokenInBalance = IERC20(tokenIn).balanceOf(address(users.bob.deleGator));
 
         console2.log("Initial Alice Token Out Balance: ", initialAliceTokenOutBalance);
-        console2.log("Initial Delegator Token Out Balance: ", initialDelegatorTokenOutBalance);
-        console2.log("Initial Delegator Token In Balance: ", initialDelegatorTokenInBalance);
+        console2.log("Initial Bob Token Out Balance: ", initialBobTokenOutBalance);
+        console2.log("Initial Bob Token In Balance: ", initialBobTokenInBalance);
 
         // Delegator signs an empty delegation (for testing purposes only)
-
-        Delegation memory emptyDelegation = _setupSignMainDelegation(tokenIn, amountIn, delegator);
+        Delegation memory emptyDelegation =
+            _setupSignMainDelegation(tokenOut,aliceAmountOut + delegatorAmountOut, tokenIn, amountIn, users.bob, erc20TransferDelegation);
 
         Params memory params = Params({
             _tokenOut: tokenOut,
@@ -261,17 +296,17 @@ contract LimitOrder_Test is BaseTest {
 
         // Get final balances
         uint256 finalAliceTokenOutBalance = IERC20(tokenOut).balanceOf(address(users.alice.deleGator));
-        uint256 finalDelegatorTokenOutBalance = IERC20(tokenOut).balanceOf(address(delegator.deleGator));
-        uint256 finalDelegatorTokenInBalance = IERC20(tokenIn).balanceOf(address(delegator.deleGator));
+        uint256 finalBobTokenOutBalance = IERC20(tokenOut).balanceOf(address(users.bob.deleGator));
+        uint256 finalBobTokenInBalance = IERC20(tokenIn).balanceOf(address(users.bob.deleGator));
 
         console2.log("Final Alice Token Out Balance: ", finalAliceTokenOutBalance);
-        console2.log("Final Delegator Token Out Balance: ", finalDelegatorTokenOutBalance);
-        console2.log("Final Delegator Token In Balance: ", finalDelegatorTokenInBalance);
+        console2.log("Final Bob Token Out Balance: ", finalBobTokenOutBalance);
+        console2.log("Final Bob Token In Balance: ", finalBobTokenInBalance);
 
         // Check the balances
         assertEq(finalAliceTokenOutBalance, initialAliceTokenOutBalance - aliceAmountOut);
-        assertEq(finalDelegatorTokenOutBalance, initialDelegatorTokenOutBalance - delegatorAmountOut);
-        assertEq(finalDelegatorTokenInBalance, initialDelegatorTokenInBalance + amountIn);
+        assertEq(finalBobTokenOutBalance, initialBobTokenOutBalance - delegatorAmountOut);
+        assertEq(finalBobTokenInBalance, initialBobTokenInBalance + amountIn);
 
         vm.stopPrank();
     }
