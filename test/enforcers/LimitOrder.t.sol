@@ -122,7 +122,6 @@ contract LimitOrder_Test is BaseTest {
         // Limit Order Delegation Caveats //
         Caveat[] memory delegationCaveats = new Caveat[](2);
 
-
         // External Hook Enforcer
         // Let the resolver fulfill the delegation
         delegationCaveats[0] = Caveat({ args: hex"", enforcer: address(externalHookEnforcer), terms: hex"" });
@@ -146,6 +145,7 @@ contract LimitOrder_Test is BaseTest {
         // Reassign the delegation with the signature
         delegation = signDelegation(_delegator, delegation);
     }
+
     function _setupSignErc20TransferAmountDelegation(
         address _tokenOut,
         uint256 _amountOut,
@@ -213,7 +213,7 @@ contract LimitOrder_Test is BaseTest {
         executionCallDatas[0] = ExecutionLib.encodeSingle(execution.target, execution.value, execution.callData);
     }
 
-       function _setupRedeemLimitOrderDelegationWithRedelegation(
+    function _setupRedeemLimitOrderDelegationWithRedelegation(
         address _tokenOut,
         uint256 _amountOut,
         address _tokenIn,
@@ -315,13 +315,16 @@ contract LimitOrder_Test is BaseTest {
         bytes32 authority = EncoderLib._getDelegationHash(erc20TransferDelegation);
 
         // Delegator sets up and signs a limit order delegation
-        Delegation memory limitOrderDelegation =
-            _setupSignLimitOrderWithoutERC20TransferDelegation(tokenOut, amountOut, tokenIn, amountIn, authority, delegator);
+        Delegation memory limitOrderDelegation = _setupSignLimitOrderWithoutERC20TransferDelegation(
+            tokenOut, amountOut, tokenIn, amountIn, authority, delegator
+        );
 
         // Delegate Redeems the limit order
         vm.startPrank(resolver.addr);
         (bytes[] memory permissionContexts, bytes[] memory executionCallDatas) =
-            _setupRedeemLimitOrderDelegationWithRedelegation(tokenOut, amountOut, tokenIn, amountIn, erc20TransferDelegation, limitOrderDelegation);
+        _setupRedeemLimitOrderDelegationWithRedelegation(
+            tokenOut, amountOut, tokenIn, amountIn, erc20TransferDelegation, limitOrderDelegation
+        );
 
         delegationManager.redeemDelegations(permissionContexts, oneSingleMode, executionCallDatas);
 
