@@ -6,3 +6,4 @@ webauthn-sol/=lib/webauthn-sol/src/
 safe-singleton-deployer-sol/=lib/safe-singleton-deployer-sol/src/
 openzeppelin-contracts/=lib/openzeppelin-contracts/
 @openzeppelin/=lib/openzeppelin-contracts/
+aave-v3-core/=lib/aave-v3-core/contracts/

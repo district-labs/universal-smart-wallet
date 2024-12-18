@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT AND Apache-2.0
 pragma solidity 0.8.23;
 
-import { console2 } from "forge-std/console2.sol";
 import { Test } from "forge-std/Test.sol";
 import { Vm } from "forge-std/Vm.sol";
 import { EntryPoint } from "@account-abstraction/core/EntryPoint.sol";
@@ -10,7 +9,6 @@ import { FCL_ecdsa_utils } from "@FCL/FCL_ecdsa_utils.sol";
 import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import { IEntryPoint } from "@account-abstraction/core/EntryPoint.sol";
 import { ModeLib } from "@erc7579/lib/ModeLib.sol";
-import { ExecutionLib } from "@erc7579/lib/ExecutionLib.sol";
 
 import { P256SCLVerifierLib } from "delegation-framework/src/libraries/P256SCLVerifierLib.sol";
 import { SCL_Wrapper } from "delegation-framework/test/utils/SCLWrapperLib.sol";
@@ -22,8 +20,6 @@ import { SigningUtilsLib } from "./SigningUtilsLib.t.sol";
 import { Delegation, Execution, PackedUserOperation, ModeCode } from "delegation-framework/src/utils/Types.sol";
 import { SimpleFactory } from "delegation-framework/src/utils/SimpleFactory.sol";
 import { DelegationManager } from "delegation-framework/src/DelegationManager.sol";
-import { DeleGatorCore } from "delegation-framework/src/DeleGatorCore.sol";
-import { HybridDeleGator } from "delegation-framework/src/HybridDeleGator.sol";
 import { MultiSigDeleGator } from "delegation-framework/src/MultiSigDeleGator.sol";
 
 import { UniversalWallet } from "src/UniversalWallet.sol";
@@ -314,6 +310,7 @@ abstract contract BaseTest is Test {
         owners[0] = abi.encodePacked(user_.x, user_.y);
         owners[1] = abi.encode(user_.addr);
         user_.wallet = _deployUniversalWallet(owners);
+        user_.deleGator = _deployUniversalWallet(owners);
 
         vm.deal(address(user_.wallet), 100 ether);
         vm.label(address(user_.wallet), string.concat(_name, " Universal Wallet"));
