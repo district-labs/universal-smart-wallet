@@ -4,17 +4,8 @@ pragma solidity 0.8.23;
 import { ModeLib } from "@erc7579/lib/ModeLib.sol";
 import { ModeCode } from "delegation-framework/src/utils/Types.sol";
 import { BaseTest } from "test/utils/BaseTest.t.sol";
+import { MockCall } from "test/utils/MockCall.sol";
 import { ExternalHookEnforcer } from "../../src/enforcers/ExternalHookEnforcer.sol";
-
-contract MockCall {
-    error ThrowError();
-
-    function success() external { }
-
-    function throwError() external {
-        revert ThrowError();
-    }
-}
 
 contract ExternalHookEnforcer_Test is BaseTest {
     using ModeLib for ModeCode;
