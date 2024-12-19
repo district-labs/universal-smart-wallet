@@ -1,23 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-import { console2 } from "forge-std/Console2.sol";
 import { ExecutionLib } from "@erc7579/lib/ExecutionLib.sol";
 import { CaveatEnforcer } from "delegation-framework/src/enforcers/CaveatEnforcer.sol";
-import { EncoderLib } from "delegation-framework/src/libraries/EncoderLib.sol";
 import { IDelegationManager } from "delegation-framework/src/interfaces/IDelegationManager.sol";
+import { EncoderLib } from "delegation-framework/src/libraries/EncoderLib.sol";
 import { ModeCode, Delegation, Execution } from "delegation-framework/src/utils/Types.sol";
 
-/**
- * @title RedeemDelegationEnforcer
- * @dev This contract enforces the execution of an external hook in the `afterAllHook` method.
- */
-contract RedeemDelegationEnforcer is CaveatEnforcer {
+/// @title Delegation Redemption Enforcer
+/// @dev This contract enforces the redemption of a delegation in the execution call in a specific index of a batch
+/// execution. It only works in batch execution mode.
+contract DelegationRedemptionEnforcer is CaveatEnforcer {
     using ExecutionLib for bytes;
-    ////////////////////////////// State //////////////////////////////
-
-    /// @dev The Delegation Manager contract to redeem the delegation
-    IDelegationManager public immutable delegationManager;
 
     ////////////////////////////// Errors //////////////////////////////
 
@@ -28,12 +22,6 @@ contract RedeemDelegationEnforcer is CaveatEnforcer {
     error InvalidPermissionContextsLength(uint256 length);
     error InvalidDelegationsLength(uint256 length);
     error InvalidDelegationHash(bytes32 delegationHash, bytes32 expectedHash);
-
-    ////////////////////////////// Constructor //////////////////////////////
-
-    constructor(address _delegationManager) {
-        delegationManager = IDelegationManager(_delegationManager);
-    }
 
     ////////////////////////////// Public Methods //////////////////////////////
 
@@ -55,14 +43,14 @@ contract RedeemDelegationEnforcer is CaveatEnforcer {
         override
         onlyBatchExecutionMode(_mode)
     {
-        (uint16 executionCallIndex, bytes32 expectedDelegationHash) = getTermsInfo(_terms);
+        (uint16 executionCallIndex, address delegationManager, bytes32 expectedDelegationHash) = getTermsInfo(_terms);
 
         Execution[] calldata executions = _executionCallData.decodeBatch();
 
         Execution calldata targetExecution = executions[executionCallIndex];
 
-        if (targetExecution.target != address(delegationManager)) {
-            revert InvalidTarget(targetExecution.target, address(delegationManager));
+        if (targetExecution.target != delegationManager) {
+            revert InvalidTarget(targetExecution.target, delegationManager);
         }
 
         if (targetExecution.callData.length < 4) {
@@ -100,17 +88,19 @@ contract RedeemDelegationEnforcer is CaveatEnforcer {
      * @notice Decodes the terms used in this CaveatEnforcer.
      * @param _terms encoded data that is used during the execution hooks.
      * @return executionCallIndex The index of the execution call.
+     * @return delegationManager The address of the delegation manager contract.
      * @return delegationHash The hash of the delegation.
      */
     function getTermsInfo(bytes calldata _terms)
         public
         pure
-        returns (uint16 executionCallIndex, bytes32 delegationHash)
+        returns (uint16 executionCallIndex, address delegationManager, bytes32 delegationHash)
     {
-        if (_terms.length != 34) {
+        if (_terms.length != 54) {
             revert InvalidTermsLength(_terms.length);
         }
         executionCallIndex = uint16(bytes2(_terms[:2]));
-        delegationHash = bytes32(_terms[2:]);
+        delegationManager = address(bytes20(_terms[2:22]));
+        delegationHash = bytes32(_terms[22:]);
     }
 }

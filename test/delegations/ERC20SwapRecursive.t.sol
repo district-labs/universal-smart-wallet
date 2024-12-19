@@ -17,7 +17,7 @@ import { ModeLib } from "@erc7579/lib/ModeLib.sol";
 import { ExactExecutionCallsLengthEnforcer } from "../../src/enforcers/ExactExecutionCallsLengthEnforcer.sol";
 import { BatchExecutionCallIndexEnforcer } from "../../src/enforcers/BatchExecutionCallIndexEnforcer.sol";
 import { ExternalHookEnforcer } from "../../src/enforcers/ExternalHookEnforcer.sol";
-import { RedeemDelegationEnforcer } from "../../src/enforcers/RedeemDelegationEnforcer.sol";
+import { DelegationRedemptionEnforcer } from "../../src/enforcers/DelegationRedemptionEnforcer.sol";
 import { ERC20BalanceGteAfterAllEnforcer } from "../../src/enforcers/ERC20BalanceGteAfterAllEnforcer.sol";
 import { EncoderLib } from "delegation-framework/src/libraries/EncoderLib.sol";
 import { ERC20TransferAmountEnforcer } from "delegation-framework/src/enforcers/ERC20TransferAmountEnforcer.sol";
@@ -37,7 +37,7 @@ contract ERC20SwapRecursive_Test is BaseTest {
     NativeBalanceGteEnforcer nativeBalanceGteEnforcer;
     ExternalHookEnforcer externalHookEnforcer;
     ERC20BalanceGteAfterAllEnforcer erc20BalanceGteAfterAllEnforcer;
-    RedeemDelegationEnforcer redeemDelegationEnforcer;
+    DelegationRedemptionEnforcer delegationRedemptionEnforcer;
     ExactExecutionCallsLengthEnforcer exactExecutionCallsLengthEnforcer;
     BatchExecutionCallIndexEnforcer batchExecutionCallIndexEnforcer;
 
@@ -62,7 +62,7 @@ contract ERC20SwapRecursive_Test is BaseTest {
         nativeBalanceGteEnforcer = new NativeBalanceGteEnforcer();
         externalHookEnforcer = new ExternalHookEnforcer();
         erc20BalanceGteAfterAllEnforcer = new ERC20BalanceGteAfterAllEnforcer();
-        redeemDelegationEnforcer = new RedeemDelegationEnforcer(address(delegationManager));
+        delegationRedemptionEnforcer = new DelegationRedemptionEnforcer();
         exactExecutionCallsLengthEnforcer = new ExactExecutionCallsLengthEnforcer();
         batchExecutionCallIndexEnforcer = new BatchExecutionCallIndexEnforcer();
 
@@ -157,8 +157,8 @@ contract ERC20SwapRecursive_Test is BaseTest {
         // Enforce the redemption of the nested delegation in the first execution call
         delegationCaveats[3] = Caveat({
             args: hex"",
-            enforcer: address(redeemDelegationEnforcer),
-            terms: abi.encodePacked(uint16(0), EncoderLib._getDelegationHash(nestedDelegation))
+            enforcer: address(delegationRedemptionEnforcer),
+            terms: abi.encodePacked(uint16(0), address(delegationManager), EncoderLib._getDelegationHash(nestedDelegation))
         });
 
         // Enforce the transfer of the delegated amount and the balance amount to the resolver in the second execution
