@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.23;
 
-import { console2 } from "forge-std/console2.sol";
 import { ModeLib } from "@erc7579/lib/ModeLib.sol";
 import { ModeCode } from "delegation-framework/src/utils/Types.sol";
 import { BaseTest } from "test/utils/BaseTest.t.sol";
