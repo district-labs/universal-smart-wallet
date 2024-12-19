@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-import {console2} from "forge-std/Console2.sol";
+import { console2 } from "forge-std/Console2.sol";
 import { ExecutionLib } from "@erc7579/lib/ExecutionLib.sol";
 import { CaveatEnforcer } from "delegation-framework/src/enforcers/CaveatEnforcer.sol";
 import { EncoderLib } from "delegation-framework/src/libraries/EncoderLib.sol";
 import { IDelegationManager } from "delegation-framework/src/interfaces/IDelegationManager.sol";
-import { ModeCode, Delegation,Execution } from "delegation-framework/src/utils/Types.sol";
+import { ModeCode, Delegation, Execution } from "delegation-framework/src/utils/Types.sol";
 
 /**
  * @title RedeemDelegationEnforcer
@@ -76,27 +76,24 @@ contract RedeemDelegationEnforcer is CaveatEnforcer {
         }
 
         // TODO: Check delegation hash
-        ( bytes[] memory _permissionContexts,, ) = abi.decode(
-            targetExecution.callData[4:],
-            (bytes[], ModeCode[], bytes[])
-        );
+        (bytes[] memory _permissionContexts,,) =
+            abi.decode(targetExecution.callData[4:], (bytes[], ModeCode[], bytes[]));
 
-        if(_permissionContexts.length !=1) {
+        if (_permissionContexts.length != 1) {
             revert InvalidPermissionContextsLength(_permissionContexts.length);
         }
 
         Delegation[] memory delegations = abi.decode(_permissionContexts[0], (Delegation[]));
 
-        if(delegations.length !=1) {
-          revert InvalidDelegationsLength(delegations.length);
+        if (delegations.length != 1) {
+            revert InvalidDelegationsLength(delegations.length);
         }
 
-      bytes32 delegationHash = EncoderLib._getDelegationHash(delegations[0]);
-        
-      if (delegationHash != expectedDelegationHash) {
-          revert InvalidDelegationHash(delegationHash, expectedDelegationHash);
-      }
+        bytes32 delegationHash = EncoderLib._getDelegationHash(delegations[0]);
 
+        if (delegationHash != expectedDelegationHash) {
+            revert InvalidDelegationHash(delegationHash, expectedDelegationHash);
+        }
     }
 
     /**

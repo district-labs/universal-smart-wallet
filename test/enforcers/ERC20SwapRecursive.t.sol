@@ -18,11 +18,12 @@ import { ExactExecutionCallsLengthEnforcer } from "../../src/enforcers/ExactExec
 import { BatchExecutionCallIndexEnforcer } from "../../src/enforcers/BatchExecutionCallIndexEnforcer.sol";
 import { ExternalHookEnforcer } from "../../src/enforcers/ExternalHookEnforcer.sol";
 import { RedeemDelegationEnforcer } from "../../src/enforcers/RedeemDelegationEnforcer.sol";
-import { EncoderLib } from "delegation-framework/src/libraries/EncoderLib.sol";
 import { ERC20BalanceGteAfterAllEnforcer } from "../../src/enforcers/ERC20BalanceGteAfterAllEnforcer.sol";
+import { EncoderLib } from "delegation-framework/src/libraries/EncoderLib.sol";
 import { ERC20TransferAmountEnforcer } from "delegation-framework/src/enforcers/ERC20TransferAmountEnforcer.sol";
+import { NativeBalanceGteEnforcer } from "delegation-framework/src/enforcers/NativeBalanceGteEnforcer.sol";
 
-contract LimitOrder_Test is BaseTest {
+contract ERC20SwapRecursive_Test is BaseTest {
     using MessageHashUtils for bytes32;
     using ModeLib for ModeCode;
 
@@ -33,6 +34,7 @@ contract LimitOrder_Test is BaseTest {
 
     // Enforcers
     ERC20TransferAmountEnforcer erc20TransferAmountEnforcer;
+    NativeBalanceGteEnforcer nativeBalanceGteEnforcer;
     ExternalHookEnforcer externalHookEnforcer;
     ERC20BalanceGteAfterAllEnforcer erc20BalanceGteAfterAllEnforcer;
     RedeemDelegationEnforcer redeemDelegationEnforcer;
@@ -57,6 +59,7 @@ contract LimitOrder_Test is BaseTest {
 
         // Setup Enforcers
         erc20TransferAmountEnforcer = new ERC20TransferAmountEnforcer();
+        nativeBalanceGteEnforcer = new NativeBalanceGteEnforcer();
         externalHookEnforcer = new ExternalHookEnforcer();
         erc20BalanceGteAfterAllEnforcer = new ERC20BalanceGteAfterAllEnforcer();
         redeemDelegationEnforcer = new RedeemDelegationEnforcer(address(delegationManager));
@@ -88,7 +91,7 @@ contract LimitOrder_Test is BaseTest {
         returns (Delegation memory delegation)
     {
         // Limit Order Delegation Caveats //
-        Caveat[] memory delegationCaveats = new Caveat[](1);
+        Caveat[] memory delegationCaveats = new Caveat[](2);
 
         // ERC20 Transfer Amount Enforcer
         // Makes sure the amount is transferred to the resolver
@@ -96,6 +99,14 @@ contract LimitOrder_Test is BaseTest {
             args: hex"",
             enforcer: address(erc20TransferAmountEnforcer),
             terms: abi.encodePacked(_tokenOut, _amountOut)
+        });
+
+        // Native Balance Gte Enforcer
+        // Ensures the redeemer can't use the native token balance of the delegator
+        delegationCaveats[1] = Caveat({
+            args: hex"",
+            enforcer: address(nativeBalanceGteEnforcer),
+            terms: abi.encodePacked(address(_delegator.deleGator), uint256(0))
         });
 
         delegation = Delegation({
@@ -123,7 +134,7 @@ contract LimitOrder_Test is BaseTest {
         returns (Delegation memory delegation)
     {
         // Limit Order Delegation Caveats //
-        Caveat[] memory delegationCaveats = new Caveat[](5);
+        Caveat[] memory delegationCaveats = new Caveat[](6);
 
         // External Hook Enforcer
         // Let the resolver fulfill the delegation
@@ -150,14 +161,23 @@ contract LimitOrder_Test is BaseTest {
             terms: abi.encodePacked(uint16(0), EncoderLib._getDelegationHash(nestedDelegation))
         });
 
-        // Enforce the transfer of the delegated amount and the balance amount to the resolver in the second execution call
+        // Enforce the transfer of the delegated amount and the balance amount to the resolver in the second execution
+        // call
         delegationCaveats[4] = Caveat({
             args: hex"",
             enforcer: address(batchExecutionCallIndexEnforcer),
-            terms: abi.encodePacked(uint16(1),
-            address(_tokenOut),
-            abi.encodeWithSelector(IERC20.transfer.selector, address(mockResolver), _amountOutTotal)
+            terms: abi.encodePacked(
+                uint16(1),
+                address(_tokenOut),
+                abi.encodeWithSelector(IERC20.transfer.selector, address(mockResolver), _amountOutTotal)
             )
+        });
+
+        // Enforce the redeemer can't use the native token balance of the delegator
+        delegationCaveats[5] = Caveat({
+            args: hex"",
+            enforcer: address(nativeBalanceGteEnforcer),
+            terms: abi.encodePacked(address(_delegator.deleGator), uint256(0))
         });
 
         delegation = Delegation({
@@ -257,6 +277,8 @@ contract LimitOrder_Test is BaseTest {
 
         uint256 amountIn = aliceAmountOut + delegatorAmountOut;
 
+        vm.deal(address(users.alice.deleGator), 1000);
+
         // Alice delegates an ERC20 transfer to the delegator
         Delegation memory erc20TransferDelegation =
             _setupSignErc20TransferAmountDelegation(tokenOut, aliceAmountOut, tokenIn, amountIn, users.alice, users.bob);
@@ -276,8 +298,9 @@ contract LimitOrder_Test is BaseTest {
         console2.log("Initial Bob Token In Balance: ", initialBobTokenInBalance);
 
         // Delegator signs an empty delegation (for testing purposes only)
-        Delegation memory emptyDelegation =
-            _setupSignMainDelegation(tokenOut,aliceAmountOut + delegatorAmountOut, tokenIn, amountIn, users.bob, erc20TransferDelegation);
+        Delegation memory emptyDelegation = _setupSignMainDelegation(
+            tokenOut, aliceAmountOut + delegatorAmountOut, tokenIn, amountIn, users.bob, erc20TransferDelegation
+        );
 
         Params memory params = Params({
             _tokenOut: tokenOut,

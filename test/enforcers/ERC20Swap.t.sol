@@ -17,7 +17,7 @@ import { ExternalHookEnforcer } from "../../src/enforcers/ExternalHookEnforcer.s
 import { ERC20BalanceGteAfterAllEnforcer } from "../../src/enforcers/ERC20BalanceGteAfterAllEnforcer.sol";
 import { ERC20TransferAmountEnforcer } from "delegation-framework/src/enforcers/ERC20TransferAmountEnforcer.sol";
 
-contract LimitOrder_Test is BaseTest {
+contract ERC20Swap_Test is BaseTest {
     using MessageHashUtils for bytes32;
     using ModeLib for ModeCode;
 
@@ -62,7 +62,7 @@ contract LimitOrder_Test is BaseTest {
     }
 
     ////////////////////////////// Utils //////////////////////////////
-    function _setupSignLimitOrderDelegation(
+    function _setupSignERC20SwapDelegation(
         address _tokenOut,
         uint256 _amountOut,
         address _tokenIn,
@@ -108,7 +108,7 @@ contract LimitOrder_Test is BaseTest {
         delegation = signDelegation(_delegator, delegation);
     }
 
-    function _setupSignLimitOrderWithoutERC20TransferDelegation(
+    function _setupSignERC20SwapWithoutERC20TransferDelegation(
         address _tokenOut,
         uint256 _amountOut,
         address _tokenIn,
@@ -181,7 +181,7 @@ contract LimitOrder_Test is BaseTest {
         delegation = signDelegation(_delegator, delegation);
     }
 
-    function _setupRedeemLimitOrderDelegation(
+    function _setupRedeemERC20SwapDelegation(
         address _tokenOut,
         uint256 _amountOut,
         address _tokenIn,
@@ -213,26 +213,26 @@ contract LimitOrder_Test is BaseTest {
         executionCallDatas[0] = ExecutionLib.encodeSingle(execution.target, execution.value, execution.callData);
     }
 
-    function _setupRedeemLimitOrderDelegationWithRedelegation(
+    function _setupRedeemERC20SwapDelegationWithRedelegation(
         address _tokenOut,
         uint256 _amountOut,
         address _tokenIn,
         uint256 _amountIn,
         Delegation memory _erc20TransferAmountDelegation,
-        Delegation memory _limitOrderDelegation
+        Delegation memory _erc20SwapDelegation
     )
         internal
         returns (bytes[] memory permissionContexts, bytes[] memory executionCallDatas)
     {
         // Update the delegation to update the external hook enforcer args
-        _limitOrderDelegation.caveats[0].args = abi.encodePacked(
+        _erc20SwapDelegation.caveats[0].args = abi.encodePacked(
             address(mockResolver),
             abi.encodeWithSelector(mockResolver.transfer.selector, _tokenIn, address(delegator.deleGator), _amountIn)
         );
 
         // Setup Permission Contexts
         Delegation[] memory delegations = new Delegation[](2);
-        delegations[0] = _limitOrderDelegation;
+        delegations[0] = _erc20SwapDelegation;
         delegations[1] = _erc20TransferAmountDelegation;
         permissionContexts = new bytes[](1);
         permissionContexts[0] = abi.encode(delegations);
@@ -267,13 +267,13 @@ contract LimitOrder_Test is BaseTest {
         console2.log("Initial Delegator Token In Balance: ", initialDelegatorTokenInBalance);
 
         // Delegator sets up and signs a limit order delegation
-        Delegation memory limitOrderDelegation =
-            _setupSignLimitOrderDelegation(tokenOut, amountOut, tokenIn, amountIn, ROOT_AUTHORITY, delegator);
+        Delegation memory erc20SwapDelegation =
+            _setupSignERC20SwapDelegation(tokenOut, amountOut, tokenIn, amountIn, ROOT_AUTHORITY, delegator);
 
         // Delegate Redeems the limit order
         vm.startPrank(resolver.addr);
         (bytes[] memory permissionContexts, bytes[] memory executionCallDatas) =
-            _setupRedeemLimitOrderDelegation(tokenOut, amountOut, tokenIn, amountIn, limitOrderDelegation);
+            _setupRedeemERC20SwapDelegation(tokenOut, amountOut, tokenIn, amountIn, erc20SwapDelegation);
 
         delegationManager.redeemDelegations(permissionContexts, oneSingleMode, executionCallDatas);
 
@@ -315,15 +315,15 @@ contract LimitOrder_Test is BaseTest {
         bytes32 authority = EncoderLib._getDelegationHash(erc20TransferDelegation);
 
         // Delegator sets up and signs a limit order delegation
-        Delegation memory limitOrderDelegation = _setupSignLimitOrderWithoutERC20TransferDelegation(
+        Delegation memory erc20SwapDelegation = _setupSignERC20SwapWithoutERC20TransferDelegation(
             tokenOut, amountOut, tokenIn, amountIn, authority, delegator
         );
 
         // Delegate Redeems the limit order
         vm.startPrank(resolver.addr);
         (bytes[] memory permissionContexts, bytes[] memory executionCallDatas) =
-        _setupRedeemLimitOrderDelegationWithRedelegation(
-            tokenOut, amountOut, tokenIn, amountIn, erc20TransferDelegation, limitOrderDelegation
+        _setupRedeemERC20SwapDelegationWithRedelegation(
+            tokenOut, amountOut, tokenIn, amountIn, erc20TransferDelegation, erc20SwapDelegation
         );
 
         delegationManager.redeemDelegations(permissionContexts, oneSingleMode, executionCallDatas);
