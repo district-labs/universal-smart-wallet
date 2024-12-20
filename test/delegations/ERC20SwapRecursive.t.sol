@@ -15,7 +15,7 @@ import { TestUser } from "test/utils/Types.t.sol";
 
 import { ModeLib } from "@erc7579/lib/ModeLib.sol";
 import { ExactExecutionCallsLengthEnforcer } from "../../src/enforcers/ExactExecutionCallsLengthEnforcer.sol";
-import { BatchExecutionCallIndexEnforcer } from "../../src/enforcers/BatchExecutionCallIndexEnforcer.sol";
+import { ExactExecutionCallEnforcer } from "../../src/enforcers/ExactExecutionCallEnforcer.sol";
 import { ExternalHookEnforcer } from "../../src/enforcers/ExternalHookEnforcer.sol";
 import { DelegationRedemptionEnforcer } from "../../src/enforcers/DelegationRedemptionEnforcer.sol";
 import { ERC20BalanceGteAfterAllEnforcer } from "../../src/enforcers/ERC20BalanceGteAfterAllEnforcer.sol";
@@ -39,7 +39,7 @@ contract ERC20SwapRecursive_Test is BaseTest {
     ERC20BalanceGteAfterAllEnforcer erc20BalanceGteAfterAllEnforcer;
     DelegationRedemptionEnforcer delegationRedemptionEnforcer;
     ExactExecutionCallsLengthEnforcer exactExecutionCallsLengthEnforcer;
-    BatchExecutionCallIndexEnforcer batchExecutionCallIndexEnforcer;
+    ExactExecutionCallEnforcer exactExecutionCallEnforcer;
 
     // Users
     TestUser resolver;
@@ -64,7 +64,7 @@ contract ERC20SwapRecursive_Test is BaseTest {
         erc20BalanceGteAfterAllEnforcer = new ERC20BalanceGteAfterAllEnforcer();
         delegationRedemptionEnforcer = new DelegationRedemptionEnforcer();
         exactExecutionCallsLengthEnforcer = new ExactExecutionCallsLengthEnforcer();
-        batchExecutionCallIndexEnforcer = new BatchExecutionCallIndexEnforcer();
+        exactExecutionCallEnforcer = new ExactExecutionCallEnforcer();
 
         // Setup Users
         resolver = users.user2;
@@ -165,7 +165,7 @@ contract ERC20SwapRecursive_Test is BaseTest {
         // call
         delegationCaveats[4] = Caveat({
             args: hex"",
-            enforcer: address(batchExecutionCallIndexEnforcer),
+            enforcer: address(exactExecutionCallEnforcer),
             terms: abi.encodePacked(
                 uint16(1),
                 address(_tokenOut),
