@@ -6,13 +6,13 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ModeCode } from "delegation-framework/src/utils/Types.sol";
 
 /**
- * @title ERC20BalanceGteAfterAllEnforcer
+ * @title ERC20BalanceGteWrapEnforcer
  * @dev This contract enforces that the delegator's ERC20 balance has increased by at least the specified amount
  * after the execution has been executed, measured between the `beforeHook` and `afterAllHook` calls, regardless of what
  * the execution
  * is.
  */
-contract ERC20BalanceGteAfterAllEnforcer is CaveatEnforcer {
+contract ERC20BalanceGteWrapEnforcer is CaveatEnforcer {
     ////////////////////////////// State //////////////////////////////
 
     mapping(bytes32 hashKey => uint256 balance) public balanceCache;

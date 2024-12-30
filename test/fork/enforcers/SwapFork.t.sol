@@ -13,10 +13,10 @@ import { Multicall } from "test/utils/Multicall.sol";
 
 import { ModeLib } from "@erc7579/lib/ModeLib.sol";
 import { ExternalHookEnforcer } from "src/enforcers/ExternalHookEnforcer.sol";
-import { ERC20BalanceGteAfterAllEnforcer } from "src/enforcers/ERC20BalanceGteAfterAllEnforcer.sol";
+import { ERC20BalanceGteWrapEnforcer } from "src/enforcers/ERC20BalanceGteWrapEnforcer.sol";
 import { ERC20TransferAmountEnforcer } from "delegation-framework/src/enforcers/ERC20TransferAmountEnforcer.sol";
 
-contract LimitOrder_ForkTest is ForkTest {
+contract Swap_ForkTest is ForkTest {
     using MessageHashUtils for bytes32;
     using ModeLib for ModeCode;
 
@@ -26,7 +26,7 @@ contract LimitOrder_ForkTest is ForkTest {
     // Enforcers
     ERC20TransferAmountEnforcer erc20TransferAmountEnforcer;
     ExternalHookEnforcer externalHookEnforcer;
-    ERC20BalanceGteAfterAllEnforcer erc20BalanceGteAfterAllEnforcer;
+    ERC20BalanceGteWrapEnforcer erc20BalanceGteWrapEnforcer;
 
     // Users
     TestUser delegator;
@@ -45,7 +45,7 @@ contract LimitOrder_ForkTest is ForkTest {
         // Setup Enforcers
         erc20TransferAmountEnforcer = new ERC20TransferAmountEnforcer();
         externalHookEnforcer = new ExternalHookEnforcer();
-        erc20BalanceGteAfterAllEnforcer = new ERC20BalanceGteAfterAllEnforcer();
+        erc20BalanceGteWrapEnforcer = new ERC20BalanceGteWrapEnforcer();
 
         // Setup Users
         delegator = users.alice;
@@ -57,7 +57,7 @@ contract LimitOrder_ForkTest is ForkTest {
     }
 
     ////////////////////////////// Utils //////////////////////////////
-    function _setupSignLimitOrderDelegation(
+    function _setupSignSwapDelegation(
         address _tokenOut,
         uint256 _amountOut,
         address _tokenIn,
@@ -67,7 +67,7 @@ contract LimitOrder_ForkTest is ForkTest {
         internal
         returns (Delegation memory delegation)
     {
-        // Limit Order Delegation Caveats //
+        // swap Delegation Caveats //
         Caveat[] memory delegationCaveats = new Caveat[](3);
 
         // ERC20 Transfer Amount Enforcer
@@ -85,7 +85,7 @@ contract LimitOrder_ForkTest is ForkTest {
         // ERC20 Balance Gte After All Enforcer
         delegationCaveats[2] = Caveat({
             args: hex"",
-            enforcer: address(erc20BalanceGteAfterAllEnforcer),
+            enforcer: address(erc20BalanceGteWrapEnforcer),
             terms: abi.encodePacked(_tokenIn, _amountIn)
         });
 
@@ -102,7 +102,7 @@ contract LimitOrder_ForkTest is ForkTest {
         delegation = signDelegation(_delegator, delegation);
     }
 
-    function _setupRedeemLimitOrderDelegationAaveV3(
+    function _setupRedeemSwapDelegationAaveV3(
         address _tokenOut,
         uint256 _amountOut,
         address _tokenIn,
@@ -148,7 +148,7 @@ contract LimitOrder_ForkTest is ForkTest {
     }
     ////////////////////////////// Tests //////////////////////////////
 
-    function test_limit_order_AaveV3() external {
+    function test_swap_AaveV3() external {
         address tokenOut = address(USDC);
         address tokenIn = address(AUSDC);
         uint256 amountOut = 1000e6;
@@ -166,14 +166,14 @@ contract LimitOrder_ForkTest is ForkTest {
         console2.log("Initial Delegator Token Out Balance: ", initialDelegatorTokenOutBalance);
         console2.log("Initial Delegator Token In Balance: ", initialDelegatorTokenInBalance);
 
-        // Delegator sets up and signs a limit order delegation
-        Delegation memory limitOrderDelegation =
-            _setupSignLimitOrderDelegation(tokenOut, amountOut, tokenIn, amountIn, delegator);
+        // Delegator sets up and signs a swap delegation
+        Delegation memory swapDelegation =
+            _setupSignSwapDelegation(tokenOut, amountOut, tokenIn, amountIn, delegator);
 
-        // Delegate Redeems the limit order
+        // Delegate Redeems the swap
         vm.startPrank(resolver.addr);
         (bytes[] memory permissionContexts, bytes[] memory executionCallDatas) =
-            _setupRedeemLimitOrderDelegationAaveV3(tokenOut, amountOut, tokenIn, amountIn, limitOrderDelegation);
+            _setupRedeemSwapDelegationAaveV3(tokenOut, amountOut, tokenIn, amountIn, swapDelegation);
 
         delegationManager.redeemDelegations(permissionContexts, oneSingleMode, executionCallDatas);
 

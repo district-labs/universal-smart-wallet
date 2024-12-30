@@ -18,7 +18,7 @@ import { ExactExecutionCallsLengthEnforcer } from "../../src/enforcers/ExactExec
 import { ExactExecutionCallEnforcer } from "../../src/enforcers/ExactExecutionCallEnforcer.sol";
 import { ExternalHookEnforcer } from "../../src/enforcers/ExternalHookEnforcer.sol";
 import { DelegationRedemptionEnforcer } from "../../src/enforcers/DelegationRedemptionEnforcer.sol";
-import { ERC20BalanceGteAfterAllEnforcer } from "../../src/enforcers/ERC20BalanceGteAfterAllEnforcer.sol";
+import { ERC20BalanceGteWrapEnforcer } from "../../src/enforcers/ERC20BalanceGteWrapEnforcer.sol";
 import { EncoderLib } from "delegation-framework/src/libraries/EncoderLib.sol";
 import { ERC20TransferAmountEnforcer } from "delegation-framework/src/enforcers/ERC20TransferAmountEnforcer.sol";
 import { NativeBalanceGteEnforcer } from "delegation-framework/src/enforcers/NativeBalanceGteEnforcer.sol";
@@ -36,7 +36,7 @@ contract ERC20SwapRecursive_Test is BaseTest {
     ERC20TransferAmountEnforcer erc20TransferAmountEnforcer;
     NativeBalanceGteEnforcer nativeBalanceGteEnforcer;
     ExternalHookEnforcer externalHookEnforcer;
-    ERC20BalanceGteAfterAllEnforcer erc20BalanceGteAfterAllEnforcer;
+    ERC20BalanceGteWrapEnforcer erc20BalanceGteWrapEnforcer;
     DelegationRedemptionEnforcer delegationRedemptionEnforcer;
     ExactExecutionCallsLengthEnforcer exactExecutionCallsLengthEnforcer;
     ExactExecutionCallEnforcer exactExecutionCallEnforcer;
@@ -61,7 +61,7 @@ contract ERC20SwapRecursive_Test is BaseTest {
         erc20TransferAmountEnforcer = new ERC20TransferAmountEnforcer();
         nativeBalanceGteEnforcer = new NativeBalanceGteEnforcer();
         externalHookEnforcer = new ExternalHookEnforcer();
-        erc20BalanceGteAfterAllEnforcer = new ERC20BalanceGteAfterAllEnforcer();
+        erc20BalanceGteWrapEnforcer = new ERC20BalanceGteWrapEnforcer();
         delegationRedemptionEnforcer = new DelegationRedemptionEnforcer();
         exactExecutionCallsLengthEnforcer = new ExactExecutionCallsLengthEnforcer();
         exactExecutionCallEnforcer = new ExactExecutionCallEnforcer();
@@ -90,7 +90,7 @@ contract ERC20SwapRecursive_Test is BaseTest {
         internal
         returns (Delegation memory delegation)
     {
-        // Limit Order Delegation Caveats //
+        // Swap Delegation Caveats //
         Caveat[] memory delegationCaveats = new Caveat[](2);
 
         // ERC20 Transfer Amount Enforcer
@@ -133,7 +133,7 @@ contract ERC20SwapRecursive_Test is BaseTest {
         internal
         returns (Delegation memory delegation)
     {
-        // Limit Order Delegation Caveats //
+        // Swap Delegation Caveats //
         Caveat[] memory delegationCaveats = new Caveat[](6);
 
         // External Hook Enforcer
@@ -143,7 +143,7 @@ contract ERC20SwapRecursive_Test is BaseTest {
         // ERC20 Balance Gte After All Enforcer
         delegationCaveats[1] = Caveat({
             args: hex"",
-            enforcer: address(erc20BalanceGteAfterAllEnforcer),
+            enforcer: address(erc20BalanceGteWrapEnforcer),
             terms: abi.encodePacked(_tokenIn, _amountIn)
         });
 
@@ -311,7 +311,7 @@ contract ERC20SwapRecursive_Test is BaseTest {
             _delegation: emptyDelegation,
             _nestedDelegation: erc20TransferDelegation
         });
-        // Delegate Redeems the limit order
+        // Delegate Redeems the swap
         vm.startPrank(resolver.addr);
         (bytes[] memory permissionContexts, bytes[] memory executionCallDatas) = _setupRedeemNestedDelegation(params);
 

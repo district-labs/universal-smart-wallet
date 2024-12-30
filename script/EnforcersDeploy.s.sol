@@ -27,7 +27,7 @@ import { OwnershipTransferEnforcer } from "delegation-framework/src/enforcers/Ow
 import { RedeemerEnforcer } from "delegation-framework/src/enforcers/RedeemerEnforcer.sol";
 import { TimestampEnforcer } from "delegation-framework/src/enforcers/TimestampEnforcer.sol";
 import { ValueLteEnforcer } from "delegation-framework/src/enforcers/ValueLteEnforcer.sol";
-import { ERC20BalanceGteAfterAllEnforcer } from "src/enforcers/ERC20BalanceGteAfterAllEnforcer.sol";
+import { ERC20BalanceGteWrapEnforcer } from "src/enforcers/ERC20BalanceGteWrapEnforcer.sol";
 import { ExternalHookEnforcer } from "src/enforcers/ExternalHookEnforcer.sol";
 
 contract EnforcersDeploy is Script {
@@ -134,10 +134,10 @@ contract EnforcersDeploy is Script {
         console2.log("ValueLteEnforcer: %s", deployedAddress);
 
         deployedAddress = SafeSingletonDeployer.deploy({
-            creationCode: type(ERC20BalanceGteAfterAllEnforcer).creationCode,
+            creationCode: type(ERC20BalanceGteWrapEnforcer).creationCode,
             salt: salt
         });
-        console2.log("ERC20BalanceGteAfterAllEnforcer: %s", deployedAddress);
+        console2.log("ERC20BalanceGteWrapEnforcer: %s", deployedAddress);
 
         deployedAddress =
             SafeSingletonDeployer.deploy({ creationCode: type(ExternalHookEnforcer).creationCode, salt: salt });

@@ -14,7 +14,7 @@ import { TestUser } from "test/utils/Types.t.sol";
 
 import { ModeLib } from "@erc7579/lib/ModeLib.sol";
 import { ExternalHookEnforcer } from "../../src/enforcers/ExternalHookEnforcer.sol";
-import { ERC20BalanceGteAfterAllEnforcer } from "../../src/enforcers/ERC20BalanceGteAfterAllEnforcer.sol";
+import { ERC20BalanceGteWrapEnforcer } from "../../src/enforcers/ERC20BalanceGteWrapEnforcer.sol";
 import { ERC20TransferAmountEnforcer } from "delegation-framework/src/enforcers/ERC20TransferAmountEnforcer.sol";
 
 contract ERC20Swap_Test is BaseTest {
@@ -29,7 +29,7 @@ contract ERC20Swap_Test is BaseTest {
     // Enforcers
     ERC20TransferAmountEnforcer erc20TransferAmountEnforcer;
     ExternalHookEnforcer externalHookEnforcer;
-    ERC20BalanceGteAfterAllEnforcer erc20BalanceGteAfterAllEnforcer;
+    ERC20BalanceGteWrapEnforcer erc20BalanceGteWrapEnforcer;
 
     // Users
     TestUser delegator;
@@ -50,7 +50,7 @@ contract ERC20Swap_Test is BaseTest {
         // Setup Enforcers
         erc20TransferAmountEnforcer = new ERC20TransferAmountEnforcer();
         externalHookEnforcer = new ExternalHookEnforcer();
-        erc20BalanceGteAfterAllEnforcer = new ERC20BalanceGteAfterAllEnforcer();
+        erc20BalanceGteWrapEnforcer = new ERC20BalanceGteWrapEnforcer();
 
         // Setup Users
         delegator = users.user1;
@@ -73,7 +73,7 @@ contract ERC20Swap_Test is BaseTest {
         internal
         returns (Delegation memory delegation)
     {
-        // Limit Order Delegation Caveats //
+        // Swap Delegation Caveats //
         Caveat[] memory delegationCaveats = new Caveat[](3);
 
         // ERC20 Transfer Amount Enforcer
@@ -91,7 +91,7 @@ contract ERC20Swap_Test is BaseTest {
         // ERC20 Balance Gte After All Enforcer
         delegationCaveats[2] = Caveat({
             args: hex"",
-            enforcer: address(erc20BalanceGteAfterAllEnforcer),
+            enforcer: address(erc20BalanceGteWrapEnforcer),
             terms: abi.encodePacked(_tokenIn, _amountIn)
         });
 
@@ -119,7 +119,7 @@ contract ERC20Swap_Test is BaseTest {
         internal
         returns (Delegation memory delegation)
     {
-        // Limit Order Delegation Caveats //
+        // Swap Delegation Caveats //
         Caveat[] memory delegationCaveats = new Caveat[](2);
 
         // External Hook Enforcer
@@ -129,7 +129,7 @@ contract ERC20Swap_Test is BaseTest {
         // ERC20 Balance Gte After All Enforcer
         delegationCaveats[1] = Caveat({
             args: hex"",
-            enforcer: address(erc20BalanceGteAfterAllEnforcer),
+            enforcer: address(erc20BalanceGteWrapEnforcer),
             terms: abi.encodePacked(_tokenIn, _amountIn)
         });
 
@@ -157,7 +157,7 @@ contract ERC20Swap_Test is BaseTest {
         internal
         returns (Delegation memory delegation)
     {
-        // Limit Order Delegation Caveats //
+        // Swap Delegation Caveats //
         Caveat[] memory delegationCaveats = new Caveat[](1);
 
         // ERC20 Transfer Amount Enforcer
@@ -266,11 +266,11 @@ contract ERC20Swap_Test is BaseTest {
         console2.log("Initial Delegator Token Out Balance: ", initialDelegatorTokenOutBalance);
         console2.log("Initial Delegator Token In Balance: ", initialDelegatorTokenInBalance);
 
-        // Delegator sets up and signs a limit order delegation
+        // Delegator sets up and signs a swap delegation
         Delegation memory erc20SwapDelegation =
             _setupSignERC20SwapDelegation(tokenOut, amountOut, tokenIn, amountIn, ROOT_AUTHORITY, delegator);
 
-        // Delegate Redeems the limit order
+        // Delegate Redeems the swap
         vm.startPrank(resolver.addr);
         (bytes[] memory permissionContexts, bytes[] memory executionCallDatas) =
             _setupRedeemERC20SwapDelegation(tokenOut, amountOut, tokenIn, amountIn, erc20SwapDelegation);
@@ -314,12 +314,12 @@ contract ERC20Swap_Test is BaseTest {
 
         bytes32 authority = EncoderLib._getDelegationHash(erc20TransferDelegation);
 
-        // Delegator sets up and signs a limit order delegation
+        // Delegator sets up and signs a swap delegation
         Delegation memory erc20SwapDelegation = _setupSignERC20SwapWithoutERC20TransferDelegation(
             tokenOut, amountOut, tokenIn, amountIn, authority, delegator
         );
 
-        // Delegate Redeems the limit order
+        // Delegate Redeems the swap
         vm.startPrank(resolver.addr);
         (bytes[] memory permissionContexts, bytes[] memory executionCallDatas) =
         _setupRedeemERC20SwapDelegationWithRedelegation(
