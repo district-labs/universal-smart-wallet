@@ -15,12 +15,35 @@ contract DelegationRedemptionEnforcer is CaveatEnforcer {
 
     ////////////////////////////// Errors //////////////////////////////
 
+    /// @notice Thrown when the length of the terms is invalid.
+    /// @param length The length of the terms.
     error InvalidTermsLength(uint256 length);
-    error InvalidTarget(address target, address expectedAddress);
+
+    /// @notice Thrown when the execution target address is invalid.
+    /// @param target The execution target address.
+    /// @param expectedTarget The expected target address.
+    error InvalidTarget(address target, address expectedTarget);
+
+    /// @notice Thrown when the execution calldata is invalid.
+    /// @param length The length of the calldata.
     error InvalidMinCalldataLength(uint256 length);
-    error InvalidMethodSignature(bytes4 signature, bytes4 expectedSig);
+
+    /// @notice Thrown when the method selector is invalid.
+    /// @param selector The method selector.
+    /// @param expectedSelector The expected method selector.
+    error InvalidMethodSelector(bytes4 selector, bytes4 expectedSelector);
+
+    /// @notice Thrown when the length of the permission contexts is invalid.
+    /// @param length The length of the permission contexts.
     error InvalidPermissionContextsLength(uint256 length);
+
+    /// @notice Thrown when the length of the delegations is invalid.
+    /// @param length The length of the delegations.
     error InvalidDelegationsLength(uint256 length);
+
+    /// @notice Thrown when the delegation hash is invalid.
+    /// @param delegationHash The delegation hash.
+    /// @param expectedHash The expected delegation hash.
     error InvalidDelegationHash(bytes32 delegationHash, bytes32 expectedHash);
 
     ////////////////////////////// Public Methods //////////////////////////////
@@ -60,10 +83,9 @@ contract DelegationRedemptionEnforcer is CaveatEnforcer {
         bytes4 targetSig_ = bytes4(targetExecution.callData[0:4]);
 
         if (targetSig_ != IDelegationManager.redeemDelegations.selector) {
-            revert InvalidMethodSignature(targetSig_, IDelegationManager.redeemDelegations.selector);
+            revert InvalidMethodSelector(targetSig_, IDelegationManager.redeemDelegations.selector);
         }
 
-        // TODO: Check delegation hash
         (bytes[] memory _permissionContexts,,) =
             abi.decode(targetExecution.callData[4:], (bytes[], ModeCode[], bytes[]));
 

@@ -173,20 +173,15 @@ contract ExactExecutionCallEnforcer_Test is BaseTest {
         );
     }
 
-    function test_ExactExecutionCallEnforcer_getTermsInfo_RevertIf_InvalidTermsLength() external {
+    function test_ExactExecutionCallEnforcer_getTermsInfo_RevertIf_InvalidTermsLength(uint16 termsLength) external {
         // Terms should be at least 22 bytes long.
-        bytes memory emptyTerms = new bytes(0);
-        bytes memory shorterTerms = new bytes(20);
+        termsLength = uint16(bound(termsLength, 0, 21));
+        bytes memory wrongTerms = new bytes(termsLength);
 
         vm.expectRevert(
-            abi.encodeWithSelector(ExactExecutionCallEnforcer.InvalidTermsLength.selector, emptyTerms.length)
+            abi.encodeWithSelector(ExactExecutionCallEnforcer.InvalidTermsLength.selector, wrongTerms.length)
         );
-        exactExecutionCallEnforcer.getTermsInfo(emptyTerms);
-
-        vm.expectRevert(
-            abi.encodeWithSelector(ExactExecutionCallEnforcer.InvalidTermsLength.selector, shorterTerms.length)
-        );
-        exactExecutionCallEnforcer.getTermsInfo(shorterTerms);
+        exactExecutionCallEnforcer.getTermsInfo(wrongTerms);
     }
 
     function test_ExactExecutionCallEnforcer_getExecutionCall_RevertIf_InvalidExecutionMode() external {

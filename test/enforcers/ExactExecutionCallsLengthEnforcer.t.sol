@@ -96,20 +96,17 @@ contract ExactExecutionCallsLengthEnforcer_Test is BaseTest {
         );
     }
 
-    function test_ExactExecutionCallsLengthEnforcer_getTermsInfo_RevertIf_InvalidTermsLength() external {
-        bytes memory terms = new bytes(0);
-
-        // Should revert if the terms are empty
-        vm.expectRevert(
-            abi.encodeWithSelector(ExactExecutionCallsLengthEnforcer.InvalidTermsLength.selector, terms.length)
-        );
-        exactExecutionCallsLengthEnforcer.getTermsInfo(terms);
+    function test_ExactExecutionCallsLengthEnforcer_getTermsInfo_RevertIf_InvalidTermsLength(uint16 termsLength)
+        external
+    {
+        // Terms should be exactly 2 bytes long.
+        vm.assume(termsLength != 2);
+        bytes memory wrongTerms = new bytes(termsLength);
 
         // Should revert if the terms are not 2 bytes
-        terms = new bytes(3);
         vm.expectRevert(
-            abi.encodeWithSelector(ExactExecutionCallsLengthEnforcer.InvalidTermsLength.selector, terms.length)
+            abi.encodeWithSelector(ExactExecutionCallsLengthEnforcer.InvalidTermsLength.selector, wrongTerms.length)
         );
-        exactExecutionCallsLengthEnforcer.getTermsInfo(terms);
+        exactExecutionCallsLengthEnforcer.getTermsInfo(wrongTerms);
     }
 }
